@@ -61,6 +61,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       ],
     },
     usesIcloudStorage: true,
+    associatedDomains: [],
   },
   android: {
     icon: "./assets/icon.png",
@@ -139,6 +140,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         android: {
           usesCleartextTraffic: true,
         },
+        ios: {
+          useFrameworks: "static",
+        },
+      },
+    ],
+    [
+      "expo-notifications",
+      {
+        icon: "./assets/icon.png",
+        color: "#ffffff",
       },
     ],
   ],
