@@ -14,6 +14,7 @@ import { processSharedFile, cleanupSharedFile } from '@/utils/share-handler';
 import * as FileSystem from 'expo-file-system';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { ClerkProvider } from '@clerk/clerk-expo';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -194,7 +195,6 @@ export default function RootLayout() {
   return (
     <ClerkProvider 
       publishableKey={CLERK_PUBLISHABLE_KEY}
-      tokenCache={tokenCache}
     >
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>

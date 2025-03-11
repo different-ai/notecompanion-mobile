@@ -1,0 +1,13 @@
+diff --git a/scripts/cocoapods/utils.rb b/scripts/cocoapods/utils.rb
+index 1c42dd3..2c46dd4 100644
+--- a/scripts/cocoapods/utils.rb
++++ b/scripts/cocoapods/utils.rb
+@@ -156,7 +156,7 @@ class ReactNativePodsUtils
+     # ']' and that crashes the pod install. Let's make sure we escape it properly.
+     flags.gsub!('[', '\\[')
+     flags.gsub!(']', '\\]')
+-
++    
+     return {
+       :react_native_path => react_native_path,
+       :fabric_enabled => fabric_enabled,
