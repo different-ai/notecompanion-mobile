@@ -15,7 +15,8 @@
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
     "release:ios": "eas build --platform ios",
-    "build:ios": "eas build --platform ios --local"
+    "build:ios": "eas build --platform ios --local",
+    "postinstall": "patch-package"
   },
   "expo": {
     "doctor": {
@@ -24,11 +25,7 @@
       }
     }
   },
-  "pnpm": {
-    "patchedDependencies": {
-      "xcode@3.0.1": "patches/xcode@3.0.1.patch"
-    }
-  },
+
   "packageManager": "pnpm@9.15.8",
   "dependencies": {
     "@babel/runtime": "7.26.9",
@@ -40,6 +37,7 @@
     "expo-application": "^6.0.2",
     "expo-blur": "14.0.3",
     "expo-build-properties": "~0.13.2",
+    "patch-package": "^8.0.0",
     "expo-constants": "17.0.7",
     "expo-crypto": "~14.0.2",
     "expo-document-picker": "~13.0.3",
