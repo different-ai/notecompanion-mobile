@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import { MaterialIcons } from '@expo/vector-icons';
-import { SharedFile, UploadStatus, handleFileProcess } from '@/utils/file-handler';
+import { SharedFile, UploadStatus, handleFileProcess, handleSharedFile, startBackgroundSync } from '@/utils/file-handler';
 import { ProcessingStatus } from '@/components/processing-status';
 
 export default function ShareScreen() {
@@ -15,6 +15,11 @@ export default function ShareScreen() {
   const [processingStarted, setProcessingStarted] = useState(false);
   const [sharedFileData, setSharedFileData] = useState<SharedFile | null>(null);
   const [fileUrl, setFileUrl] = useState<string | undefined>(undefined);
+  const [previewData, setPreviewData] = useState<{
+    previewText?: string;
+    thumbnailUri?: string;
+    previewType?: 'text' | 'image' | 'other';
+  }>({});
   const [processedFileData, setProcessedFileData] = useState<{
     mimeType?: string;
     fileName?: string;
@@ -55,34 +60,68 @@ export default function ShareScreen() {
 
   const processSharedFile = async (fileData: SharedFile) => {
     try {
+      // Set initial status to uploading
+      setStatus('uploading');
+
+      // Get auth token
       const token = await getToken();
       if (!token) {
         throw new Error('Authentication required');
       }
 
-      // Handle the entire file processing workflow
-      const uploadResult = await handleFileProcess(
+      // Use the new local-first approach
+      await handleSharedFile(
         fileData,
-        token,
-        (newStatus) => setStatus(newStatus)
-      );
-
-      // Update result based on the processing outcome
-      if (uploadResult.status === 'completed') {
-        setResult('File processed successfully');
-        
-        // Update file URL to the processed version if available
-        if (uploadResult.url) {
-          setFileUrl(uploadResult.url);
-          console.log('[ShareScreen] Updated file URL for preview:', uploadResult.url);
+        (preview) => {
+          // Update preview data
+          setPreviewData(preview);
+          
+          // Update status to show the save was successful locally
+          setStatus('processing');
+          setResult('File saved locally and queued for processing');
+          
+          // Start background sync to process files in queue
+          startBackgroundSync(token);
         }
-      } else if (uploadResult.status === 'error') {
-        setResult(uploadResult.error || 'Processing failed');
-      }
+      );
+      
+      // Try to immediately process the current file 
+      // but don't block the UI if it takes too long
+      setTimeout(async () => {
+        try {
+          // Reset result message since we're starting processing
+          setResult('Processing file...');
+          
+          // Try to process the file immediately as well
+          const uploadResult = await handleFileProcess(
+            fileData,
+            token,
+            (newStatus) => setStatus(newStatus)
+          );
+
+          // Update result based on the processing outcome
+          if (uploadResult.status === 'completed') {
+            setResult('File processed successfully');
+            
+            // Update file URL to the processed version if available
+            if (uploadResult.url) {
+              setFileUrl(uploadResult.url);
+              console.log('[ShareScreen] Updated file URL for preview:', uploadResult.url);
+            }
+          } else if (uploadResult.status === 'error') {
+            // Set error message but don't change status to error since we already saved locally
+            setResult(`Processing status: ${uploadResult.error || 'Processing queued for background'}`);
+          }
+        } catch (error) {
+          console.error('[ShareScreen] Error in background processing:', error);
+          // Don't set status to error since we already saved locally
+          setResult('File saved locally. Background processing will retry automatically.');
+        }
+      }, 500);
     } catch (error) {
-      console.error('[ShareScreen] Error processing shared file:', error);
+      console.error('[ShareScreen] Error saving shared file:', error);
       setStatus('error');
-      setResult(error instanceof Error ? error.message : 'Failed to process file');
+      setResult(error instanceof Error ? error.message : 'Failed to save file');
     }
   };
 
@@ -99,85 +138,99 @@ export default function ShareScreen() {
   };
 
   const handleViewMyNotes = () => {
-    router.push('/(tabs)/notes');
+    router.replace('/notes');
   };
 
-  const renderHeader = () => (
-    <View style={styles.header}>
-      <MaterialIcons name="share" size={36} color="#007AFF" />
-      <Text style={styles.title}>Share Content</Text>
-      <Text style={styles.subtitle}>
-        Process and organize shared files automatically
-      </Text>
-    </View>
-  );
+  // Render file preview based on mime type and preview data
+  const renderFilePreview = () => {
+    // If we have a thumbnail from our preview generator, use it
+    if (previewData.previewType === 'image' && previewData.thumbnailUri) {
+      return (
+        <Image 
+          source={{ uri: previewData.thumbnailUri }} 
+          style={styles.imagePreview}
+          resizeMode="contain"
+        />
+      );
+    }
+    
+    // If we have text preview, show it
+    if (previewData.previewType === 'text' && previewData.previewText) {
+      return (
+        <View style={styles.textPreviewContainer}>
+          <Text style={styles.textPreview}>{previewData.previewText}</Text>
+        </View>
+      );
+    }
+    
+    // Otherwise fall back to the original logic
+    if (fileUrl && processedFileData.mimeType?.startsWith('image/')) {
+      return (
+        <Image 
+          source={{ uri: fileUrl }} 
+          style={styles.imagePreview}
+          resizeMode="contain"
+        />
+      );
+    }
+
+    return (
+      <View style={styles.fileTypeContainer}>
+        <MaterialIcons 
+          name={
+            processedFileData.mimeType?.includes('pdf') 
+              ? 'picture-as-pdf' 
+              : processedFileData.mimeType?.startsWith('text/') 
+                ? 'description' 
+                : 'insert-drive-file'
+          } 
+          size={80} 
+          color="#3498db" 
+        />
+        <Text style={styles.fileName}>
+          {processedFileData.fileName || 'File'}
+        </Text>
+      </View>
+    );
+  };
 
   return (
     <View style={styles.mainContainer}>
-      <ScrollView 
-        contentContainerStyle={styles.scrollContainer}
-        style={{ flex: 1 }}
-      >
-        <View style={styles.container}>
-          {renderHeader()}
-
-          {status === 'idle' && !sharedFileData && (
-            <View style={styles.emptyState}>
-              <MaterialIcons name="info-outline" size={48} color="#8e8e93" />
-              <Text style={styles.emptyStateText}>No content shared yet</Text>
-              <Text style={styles.emptyStateSubtext}>
-                Use the share sheet from another app to send files to Note Companion
-              </Text>
-            </View>
-          )}
-
-          <ProcessingStatus
-            status={status}
-            result={result}
-            fileUrl={fileUrl}
-            mimeType={processedFileData.mimeType}
-            fileName={processedFileData.fileName}
-            onRetry={handleRetry}
-            onBackToHome={handleBackToHome}
-            showDetails={true}
-          />
-
-          {(status === 'completed' || status === 'error' || !sharedFileData) && (
-            <>
-              {status === 'completed' && (
-                <TouchableOpacity
-                  style={styles.viewNotesButton}
-                  onPress={handleViewMyNotes}
-                >
-                  <Text style={styles.viewNotesButtonText}>
-                    View My Notes
-                  </Text>
-                  <MaterialIcons name="arrow-forward" size={18} color="#007AFF" />
-                </TouchableOpacity>
-              )}
-              
-              <View style={styles.tipsContainer}>
-                <Text style={styles.tipsTitle}>Tips</Text>
-                <View style={styles.tipItem}>
-                  <MaterialIcons name="lightbulb" size={18} color="#FFC107" />
-                  <Text style={styles.tipText}>Share PDFs, images, or text from any app</Text>
-                </View>
-                <View style={styles.tipItem}>
-                  <MaterialIcons name="lightbulb" size={18} color="#FFC107" />
-                  <Text style={styles.tipText}>Use the iOS Shortcut for Apple Notes</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.helpButton}
-                  onPress={() => router.push('/help')}
-                >
-                  <Text style={styles.helpButtonText}>Learn More</Text>
-                  <MaterialIcons name="arrow-forward" size={16} color="#007AFF" />
-                </TouchableOpacity>
-              </View>
-            </>
-          )}
+      <View style={styles.container}>
+        <View style={styles.previewContainer}>
+          {renderFilePreview()}
         </View>
-      </ScrollView>
+
+        <View style={styles.statusContainer}>
+          <ProcessingStatus status={status} />
+          {result && <Text style={styles.resultText}>{result}</Text>}
+        </View>
+
+        <View style={styles.actionContainer}>
+          {status === 'error' ? (
+            <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+              <MaterialIcons name="refresh" size={24} color="#fff" />
+              <Text style={styles.buttonText}>Retry</Text>
+            </TouchableOpacity>
+          ) : status === 'completed' ? (
+            <TouchableOpacity style={styles.viewNotesButton} onPress={handleViewMyNotes}>
+              <MaterialIcons name="note" size={24} color="#fff" />
+              <Text style={styles.buttonText}>View My Notes</Text>
+            </TouchableOpacity>
+          ) : null}
+
+          <TouchableOpacity 
+            style={[
+              styles.homeButton, 
+              status !== 'completed' && status !== 'error' ? styles.fullWidthButton : null
+            ]} 
+            onPress={handleBackToHome}
+          >
+            <MaterialIcons name="home" size={24} color="#fff" />
+            <Text style={styles.buttonText}>Back to Home</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 }
@@ -187,109 +240,104 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  scrollContainer: {
-    flexGrow: 1,
-    backgroundColor: '#fff',
-  },
   container: {
+    flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  header: {
+  previewContainer: {
     width: '100%',
-    alignItems: 'center',
-    marginBottom: 24,
-    paddingVertical: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginTop: 12,
-    color: '#1a1a1a',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  emptyState: {
+    height: 300,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 30,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 16,
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#e1e1e1',
-    marginVertical: 24,
+    borderColor: '#ddd',
+  },
+  imagePreview: {
     width: '100%',
+    height: '100%',
   },
-  emptyStateText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginTop: 16,
-  },
-  emptyStateSubtext: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 20,
-  },
-  tipsContainer: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 16,
-    padding: 16,
+  textPreviewContainer: {
+    padding: 20,
     width: '100%',
-    marginTop: 24,
-    borderWidth: 1,
-    borderColor: '#e1e1e1',
+    height: '100%',
   },
-  tipsTitle: {
+  textPreview: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 12,
+    color: '#333',
+    fontFamily: 'monospace',
   },
-  tipItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  tipText: {
-    fontSize: 14,
-    color: '#4a4a4a',
-    marginLeft: 8,
-  },
-  helpButton: {
-    flexDirection: 'row',
+  fileTypeContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 16,
   },
-  helpButtonText: {
-    fontSize: 14,
+  fileName: {
+    fontSize: 16,
+    marginTop: 10,
     fontWeight: '500',
-    color: '#007AFF',
-    marginRight: 4,
+    textAlign: 'center',
+  },
+  statusContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 30,
+    width: '100%',
+  },
+  resultText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  actionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  retryButton: {
+    backgroundColor: '#e74c3c',
+    borderRadius: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    marginRight: 10,
   },
   viewNotesButton: {
+    backgroundColor: '#2ecc71',
+    borderRadius: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E3F2FD',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: '#BBDEFB',
+    justifyContent: 'center',
+    flex: 1,
+    marginRight: 10,
   },
-  viewNotesButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#007AFF',
-    marginRight: 8,
+  homeButton: {
+    backgroundColor: '#3498db',
+    borderRadius: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  fullWidthButton: {
+    marginRight: 0,
+    flex: 1,
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    marginLeft: 10,
   },
 });
