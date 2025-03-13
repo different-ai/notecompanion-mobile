@@ -35,17 +35,31 @@ export default function SignInScreen() {
 
     try {
       setLoading(true);
+      console.log('[SignIn] Attempting sign in with email');
+      
+      // Create a sign in attempt
       const result = await signIn.create({
         identifier: email,
         password,
       });
 
+      console.log('[SignIn] Sign in result status:', result.status);
+      
       if (result.status === 'complete') {
-        setSignInActive({ session: result.createdSessionId });
-        router.push('/(tabs)');
+        console.log('[SignIn] Sign in complete, activating session');
+        
+        // Ensure we persist the session by setting it active
+        await setSignInActive({ session: result.createdSessionId });
+        console.log('[SignIn] Session activated successfully');
+        
+        // Navigate to main app
+        router.replace('/(tabs)');
+      } else {
+        console.log('[SignIn] Sign in requires additional steps:', result.status);
+        // Handle additional verification if needed
       }
-      // Handle additional verification if needed
     } catch (err: any) {
+      console.error('[SignIn] Sign in error:', err);
       Alert.alert('Error', err.errors?.[0]?.message || 'Failed to sign in');
     } finally {
       setLoading(false);
@@ -54,25 +68,53 @@ export default function SignInScreen() {
 
   const onSignInWithGoogle = React.useCallback(async () => {
     try {
+      console.log('[SignIn] Starting Google OAuth flow');
+      setLoading(true);
+      
       const { createdSessionId, setActive } = await googleAuth();
+      
       if (createdSessionId) {
-        setActive?.({ session: createdSessionId });
-        router.push('/(tabs)');
+        console.log('[SignIn] Google OAuth successful, activating session');
+        // Ensure session is properly activated and persisted
+        await setActive?.({ session: createdSessionId });
+        console.log('[SignIn] Google session activated successfully');
+        
+        // Use replace instead of push to avoid back navigation to login
+        router.replace('/(tabs)');
+      } else {
+        console.log('[SignIn] Google OAuth completed but no session created');
       }
     } catch (err) {
-      console.error('OAuth error:', err);
+      console.error('[SignIn] Google OAuth error:', err);
+      Alert.alert('Error', 'Failed to sign in with Google');
+    } finally {
+      setLoading(false);
     }
   }, [googleAuth]);
 
   const onSignInWithApple = React.useCallback(async () => {
     try {
+      console.log('[SignIn] Starting Apple OAuth flow');
+      setLoading(true);
+      
       const { createdSessionId, setActive } = await appleAuth();
+      
       if (createdSessionId) {
-        setActive?.({ session: createdSessionId });
-        router.push('/(tabs)');
+        console.log('[SignIn] Apple OAuth successful, activating session');
+        // Ensure session is properly activated and persisted
+        await setActive?.({ session: createdSessionId });
+        console.log('[SignIn] Apple session activated successfully');
+        
+        // Use replace instead of push to avoid back navigation to login
+        router.replace('/(tabs)');
+      } else {
+        console.log('[SignIn] Apple OAuth completed but no session created');
       }
     } catch (err) {
-      console.error('OAuth error:', err);
+      console.error('[SignIn] Apple OAuth error:', err);
+      Alert.alert('Error', 'Failed to sign in with Apple');
+    } finally {
+      setLoading(false);
     }
   }, [appleAuth]);
 

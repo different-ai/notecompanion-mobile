@@ -2,10 +2,14 @@ import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { UploadStatus } from '@/utils/file-handler';
+import { FilePreview } from './FilePreview';
 
 interface ProcessingStatusProps {
   status: UploadStatus;
   result?: string | null | { extractedText?: string, visualElements?: any };
+  fileUrl?: string;
+  mimeType?: string;
+  fileName?: string;
   onRetry?: () => void;
   onBackToHome?: () => void;
   showDetails?: boolean;
@@ -14,6 +18,9 @@ interface ProcessingStatusProps {
 export const ProcessingStatus: React.FC<ProcessingStatusProps> = ({
   status,
   result,
+  fileUrl,
+  mimeType,
+  fileName,
   onRetry,
   onBackToHome,
   showDetails = true,
@@ -42,14 +49,28 @@ export const ProcessingStatus: React.FC<ProcessingStatusProps> = ({
 
       {status === 'completed' && (
         <View style={styles.resultContainer}>
-          <MaterialIcons name="check-circle" size={24} color="#4CAF50" />
-          <Text style={styles.successText}>
-            {typeof result === 'string' 
-              ? result 
-              : result && typeof result === 'object' && 'extractedText' in result
-                ? result.extractedText 
-                : 'File processed successfully'}
-          </Text>
+          <View style={styles.resultHeader}>
+            <MaterialIcons name="check-circle" size={24} color="#4CAF50" />
+            <Text style={styles.successText}>
+              {typeof result === 'string' 
+                ? result 
+                : result && typeof result === 'object' && 'extractedText' in result
+                  ? result.extractedText 
+                  : 'File processed successfully'}
+            </Text>
+          </View>
+          
+          {/* Display file preview when completed */}
+          {fileUrl && (
+            <View style={styles.previewContainer}>
+              <FilePreview 
+                fileUrl={fileUrl} 
+                mimeType={mimeType} 
+                fileName={fileName}
+              />
+            </View>
+          )}
+          
           {showDetails && (
             <Text style={styles.resultSubtext}>
               Your file has been uploaded to Note Companion AI.
@@ -151,6 +172,19 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
+  resultHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  previewContainer: {
+    width: '100%',
+    marginVertical: 15,
+    maxHeight: 400,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
   errorContainer: {
     alignItems: 'center',
     padding: 20,
@@ -172,7 +206,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#2E7D32',
-    marginVertical: 10,
+    marginLeft: 10,
     textAlign: 'center',
   },
   resultSubtext: {
@@ -203,11 +237,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   secondaryButton: {
-    backgroundColor: '#6c757d',
+    backgroundColor: '#8E8E93',
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
     fontWeight: '600',
+    fontSize: 16,
   },
-}); 
+});

@@ -17,14 +17,29 @@ export default function TabLayout() {
 
   useEffect(() => {
     console.log('[TabLayout] Auth state changed:', { isSignedIn, isLoaded });
+    
     if (isLoaded && !isSignedIn) {
-      console.log('[TabLayout] User not signed in, redirecting to sign-in');
-      router.replace('/(auth)/sign-in');
+      // Give auth a moment to restore from storage before redirecting
+      const authTimeout = setTimeout(() => {
+        console.log('[TabLayout] User not signed in after timeout, redirecting to sign-in');
+        router.replace('/(auth)/sign-in');
+      }, 1000); // Wait 1 second before redirecting to allow token restore
+      
+      return () => clearTimeout(authTimeout);
     }
   }, [isLoaded, isSignedIn]);
 
-  if (!isLoaded || !isSignedIn) {
-    console.log('[TabLayout] Not rendering tabs due to auth state');
+  // Show nothing while auth is loading to prevent flash
+  if (!isLoaded) {
+    console.log('[TabLayout] Auth still loading, not rendering tabs yet');
+    return null;
+  }
+  
+  // If not signed in, we'll be redirected by the useEffect, but still render
+  // to prevent flashing during the delay
+  if (!isSignedIn) {
+    console.log('[TabLayout] Not signed in, waiting for redirect timeout');
+    // We're returning null here but the useEffect will handle redirection
     return null;
   }
 
@@ -51,6 +66,24 @@ export default function TabLayout() {
           title: 'Upload',
           tabBarIcon: ({ color, size }: TabIconProps) => (
             <MaterialIcons name="file-upload" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="notes"
+        options={{
+          title: 'My Notes',
+          tabBarIcon: ({ color, size }: TabIconProps) => (
+            <MaterialIcons name="note" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="sync"
+        options={{
+          title: 'Sync',
+          tabBarIcon: ({ color, size }: TabIconProps) => (
+            <MaterialIcons name="sync" size={size} color={color} />
           ),
         }}
       />

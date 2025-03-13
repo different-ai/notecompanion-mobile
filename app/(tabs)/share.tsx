@@ -14,6 +14,11 @@ export default function ShareScreen() {
   const [result, setResult] = useState<string | null>(null);
   const [processingStarted, setProcessingStarted] = useState(false);
   const [sharedFileData, setSharedFileData] = useState<SharedFile | null>(null);
+  const [fileUrl, setFileUrl] = useState<string | undefined>(undefined);
+  const [processedFileData, setProcessedFileData] = useState<{
+    mimeType?: string;
+    fileName?: string;
+  }>({});
 
   // Parse the shared file data from params
   useEffect(() => {
@@ -21,6 +26,16 @@ export default function ShareScreen() {
       try {
         const fileData: SharedFile = JSON.parse(params.sharedFile);
         setSharedFileData(fileData);
+        
+        // Store initial file properties for preview
+        setProcessedFileData({
+          mimeType: fileData.mimeType,
+          fileName: fileData.name
+        });
+        
+        // Use the original URI for initial preview
+        setFileUrl(fileData.uri);
+        
         console.log('[ShareScreen] Parsed shared file data:', fileData);
       } catch (error) {
         console.error('[ShareScreen] Error parsing shared file data:', error);
@@ -55,6 +70,12 @@ export default function ShareScreen() {
       // Update result based on the processing outcome
       if (uploadResult.status === 'completed') {
         setResult('File processed successfully');
+        
+        // Update file URL to the processed version if available
+        if (uploadResult.url) {
+          setFileUrl(uploadResult.url);
+          console.log('[ShareScreen] Updated file URL for preview:', uploadResult.url);
+        }
       } else if (uploadResult.status === 'error') {
         setResult(uploadResult.error || 'Processing failed');
       }
@@ -77,6 +98,10 @@ export default function ShareScreen() {
     router.replace('/(tabs)');
   };
 
+  const handleViewMyNotes = () => {
+    router.push('/(tabs)/notes');
+  };
+
   const renderHeader = () => (
     <View style={styles.header}>
       <MaterialIcons name="share" size={36} color="#007AFF" />
@@ -88,60 +113,85 @@ export default function ShareScreen() {
   );
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.container}>
-        {renderHeader()}
+    <View style={styles.mainContainer}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        style={{ flex: 1 }}
+      >
+        <View style={styles.container}>
+          {renderHeader()}
 
-        {status === 'idle' && !sharedFileData && (
-          <View style={styles.emptyState}>
-            <MaterialIcons name="info-outline" size={48} color="#8e8e93" />
-            <Text style={styles.emptyStateText}>No content shared yet</Text>
-            <Text style={styles.emptyStateSubtext}>
-              Use the share sheet from another app to send files to Note Companion
-            </Text>
-          </View>
-        )}
-
-        <ProcessingStatus
-          status={status}
-          result={result}
-          onRetry={handleRetry}
-          onBackToHome={handleBackToHome}
-          showDetails={true}
-        />
-
-        {(status === 'completed' || status === 'error') && (
-          <View style={styles.tipsContainer}>
-            <Text style={styles.tipsTitle}>Tips</Text>
-            <View style={styles.tipItem}>
-              <MaterialIcons name="lightbulb" size={18} color="#FFC107" />
-              <Text style={styles.tipText}>Share PDFs, images, or text from any app</Text>
+          {status === 'idle' && !sharedFileData && (
+            <View style={styles.emptyState}>
+              <MaterialIcons name="info-outline" size={48} color="#8e8e93" />
+              <Text style={styles.emptyStateText}>No content shared yet</Text>
+              <Text style={styles.emptyStateSubtext}>
+                Use the share sheet from another app to send files to Note Companion
+              </Text>
             </View>
-            <View style={styles.tipItem}>
-              <MaterialIcons name="lightbulb" size={18} color="#FFC107" />
-              <Text style={styles.tipText}>Use the iOS Shortcut for Apple Notes</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.helpButton}
-              onPress={() => router.push('/help')}
-            >
-              <Text style={styles.helpButtonText}>Learn More</Text>
-              <MaterialIcons name="arrow-forward" size={16} color="#007AFF" />
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-    </ScrollView>
+          )}
+
+          <ProcessingStatus
+            status={status}
+            result={result}
+            fileUrl={fileUrl}
+            mimeType={processedFileData.mimeType}
+            fileName={processedFileData.fileName}
+            onRetry={handleRetry}
+            onBackToHome={handleBackToHome}
+            showDetails={true}
+          />
+
+          {(status === 'completed' || status === 'error' || !sharedFileData) && (
+            <>
+              {status === 'completed' && (
+                <TouchableOpacity
+                  style={styles.viewNotesButton}
+                  onPress={handleViewMyNotes}
+                >
+                  <Text style={styles.viewNotesButtonText}>
+                    View My Notes
+                  </Text>
+                  <MaterialIcons name="arrow-forward" size={18} color="#007AFF" />
+                </TouchableOpacity>
+              )}
+              
+              <View style={styles.tipsContainer}>
+                <Text style={styles.tipsTitle}>Tips</Text>
+                <View style={styles.tipItem}>
+                  <MaterialIcons name="lightbulb" size={18} color="#FFC107" />
+                  <Text style={styles.tipText}>Share PDFs, images, or text from any app</Text>
+                </View>
+                <View style={styles.tipItem}>
+                  <MaterialIcons name="lightbulb" size={18} color="#FFC107" />
+                  <Text style={styles.tipText}>Use the iOS Shortcut for Apple Notes</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.helpButton}
+                  onPress={() => router.push('/help')}
+                >
+                  <Text style={styles.helpButtonText}>Learn More</Text>
+                  <MaterialIcons name="arrow-forward" size={16} color="#007AFF" />
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   scrollContainer: {
     flexGrow: 1,
     backgroundColor: '#fff',
   },
   container: {
-    flex: 1,
     padding: 20,
     backgroundColor: '#fff',
     alignItems: 'center',
@@ -200,8 +250,8 @@ const styles = StyleSheet.create({
   tipsTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 12,
     color: '#1a1a1a',
+    marginBottom: 12,
   },
   tipItem: {
     flexDirection: 'row',
@@ -210,7 +260,7 @@ const styles = StyleSheet.create({
   },
   tipText: {
     fontSize: 14,
-    color: '#666',
+    color: '#4a4a4a',
     marginLeft: 8,
   },
   helpButton: {
@@ -218,12 +268,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 16,
-    padding: 8,
   },
   helpButtonText: {
     fontSize: 14,
+    fontWeight: '500',
     color: '#007AFF',
-    fontWeight: '600',
     marginRight: 4,
+  },
+  viewNotesButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E3F2FD',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#BBDEFB',
+  },
+  viewNotesButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#007AFF',
+    marginRight: 8,
   },
 });

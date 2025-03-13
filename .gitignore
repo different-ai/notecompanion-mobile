@@ -11,6 +11,7 @@ android/
 dist/
 web-build/
 expo-env.d.ts
+*.ipa
 
 # Native
 *.orig.*

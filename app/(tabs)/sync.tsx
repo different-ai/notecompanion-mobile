@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   View,
@@ -23,7 +22,7 @@ const integrations: IntegrationOption[] = [
     name: 'Obsidian',
     icon: 'book',
     description: 'Sync your files directly with your Obsidian vault',
-    comingSoon: true,
+    comingSoon: false,
   },
   {
     id: 'gdrive',
@@ -68,14 +67,30 @@ export default function SyncScreen() {
                   <MaterialIcons name={integration.icon as any} size={32} color="#007AFF" />
                   <View style={styles.integrationTitleContainer}>
                     <Text style={styles.integrationTitle}>{integration.name}</Text>
-                    <View style={styles.comingSoonBadge}>
-                      <Text style={styles.comingSoonText}>Coming Soon</Text>
-                    </View>
+                    {integration.comingSoon ? (
+                      <View style={styles.comingSoonBadge}>
+                        <Text style={styles.comingSoonText}>Coming Soon</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.availableBadge}>
+                        <Text style={styles.availableText}>Available</Text>
+                      </View>
+                    )}
                   </View>
                 </View>
                 <Text style={styles.integrationDescription}>
                   {integration.description}
                 </Text>
+                {integration.id === 'obsidian' && !integration.comingSoon && (
+                  <View style={styles.instructionsContainer}>
+                    <Text style={styles.instructionsTitle}>How to sync:</Text>
+                    <Text style={styles.instructionsText}>
+                      1. Visit notecompanion.ai in your browser{'\n'}
+                      2. Follow the instructions for Obsidian integration{'\n'}
+                      3. Your notes will sync between this app and your Obsidian vault
+                    </Text>
+                  </View>
+                )}
               </View>
             ))}
           </View>
@@ -85,6 +100,9 @@ export default function SyncScreen() {
             <Text style={styles.notificationTitle}>Stay Updated</Text>
             <Text style={styles.notificationText}>
               We'll notify you as soon as these integrations become available.
+            </Text>
+            <Text style={styles.notificationHint}>
+              You can view your saved notes in the My Notes tab.
             </Text>
           </View>
         </View>
@@ -175,9 +193,37 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     fontWeight: '600',
   },
+  availableBadge: {
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  availableText: {
+    fontSize: 12,
+    color: '#4CAF50',
+    fontWeight: '600',
+  },
   integrationDescription: {
     fontSize: 14,
     color: '#666',
+    lineHeight: 20,
+  },
+  instructionsContainer: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+  },
+  instructionsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#333',
+  },
+  instructionsText: {
+    fontSize: 13,
+    color: '#555',
     lineHeight: 20,
   },
   notificationCard: {
@@ -201,4 +247,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-}); 
+  notificationHint: {
+    fontSize: 14,
+    color: '#1a1a1a',
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 12,
+  },
+});

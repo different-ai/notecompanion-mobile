@@ -15,13 +15,15 @@ export interface UploadResult {
   status: UploadStatus;
   text?: string | { extractedText?: string; visualElements?: any };
   error?: string;
-  fileId?: number;
+  fileId?: number | string;
+  url?: string;
 }
 
 export interface UploadResponse {
   success: boolean;
-  fileId: number;
+  fileId?: number | string;
   status: string;
+  url?: string;
 }
 
 /**
@@ -31,7 +33,6 @@ export const prepareFile = async (file: SharedFile): Promise<{
   fileName: string;
   mimeType: string;
   fileUri: string;
-  base64Content: string;
 }> => {
   // Determine filename
   const uriParts = file.uri.split('.');
@@ -87,56 +88,67 @@ export const prepareFile = async (file: SharedFile): Promise<{
     }
   }
 
-  // Read file content as base64
-  const base64Content = await FileSystem.readAsStringAsync(
-    fileUri,
-    { encoding: FileSystem.EncodingType.Base64 }
-  );
-
   return {
     fileName,
     mimeType,
-    fileUri,
-    base64Content,
+    fileUri
   };
 };
 
 /**
- * Uploads a file to the server
+ * Uploads a file to the server using the server's Vercel Blob integration
  */
 export const uploadFile = async (
   file: SharedFile, 
   token: string
 ): Promise<UploadResponse> => {
-  const { fileName, mimeType, base64Content } = await prepareFile(file);
-  
-  const uploadResponse = await fetch(`${API_URL}/api/upload`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      name: fileName,
-      type: mimeType,
-      base64: base64Content,
-    }),
-  });
+  try {
+    const { fileName, mimeType, fileUri } = await prepareFile(file);
+    
+    // For React Native environment, we'll use a different approach than browser File objects
+    const fileContent = await FileSystem.readAsStringAsync(
+      fileUri,
+      { encoding: FileSystem.EncodingType.Base64 }
+    );
+    
+    // Send to our API endpoint which will handle the Vercel Blob upload
+    const uploadResponse = await fetch(`${API_URL}/api/upload`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        name: fileName,
+        type: mimeType,
+        base64: fileContent,
+      }),
+    });
 
-  if (!uploadResponse.ok) {
-    const errorData = await uploadResponse
-      .json()
-      .catch(() => ({ error: 'Upload failed' }));
-    throw new Error(errorData.error || 'Upload failed');
+    if (!uploadResponse.ok) {
+      const errorData = await uploadResponse
+        .json()
+        .catch(() => ({ error: 'Upload failed' }));
+      throw new Error(errorData.error || 'Upload failed');
+    }
+
+    const responseData = await uploadResponse.json();
+    return {
+      success: responseData.success,
+      fileId: responseData.fileId,
+      status: responseData.status,
+      url: responseData.url,
+    };
+  } catch (error) {
+    console.error('Upload error:', error);
+    throw error;
   }
-
-  return await uploadResponse.json();
 };
 
 /**
  * Processes a file with retry logic
  */
-export const processFile = async (fileId: number, token: string): Promise<void> => {
+export const processFile = async (fileId: number | string, token: string): Promise<void> => {
   let retryCount = 0;
   let processResponse;
 
@@ -196,7 +208,7 @@ export const processFile = async (fileId: number, token: string): Promise<void> 
  * Polls for file processing results
  */
 export const pollForResults = async (
-  fileId: number,
+  fileId: number | string,
   token: string
 ): Promise<UploadResult> => {
   let attempts = 0;
@@ -227,7 +239,12 @@ export const pollForResults = async (
       const data = await response.json();
 
       if (data.error) return { status: 'error', error: data.error, fileId };
-      if (data.status === 'completed') return { status: 'completed', text: data.text, fileId };
+      if (data.status === 'completed') return { 
+        status: 'completed', 
+        text: data.text, 
+        fileId,
+        url: data.url
+      };
       if (data.status === 'error') return { status: 'error', error: data.error, fileId };
 
       await new Promise((resolve) => setTimeout(resolve, pollInterval));
@@ -262,16 +279,32 @@ export const handleFileProcess = async (
     // Update status to processing
     onStatusChange?.('processing');
     
-    // Process file
-    await processFile(uploadData.fileId, token);
-    
-    // Poll for results
-    const result = await pollForResults(uploadData.fileId, token);
-    
-    // Update final status
-    onStatusChange?.(result.status);
-    
-    return result;
+    // Only process if we have a valid fileId
+    if (uploadData.fileId) {
+      // Process file
+      await processFile(uploadData.fileId, token);
+      
+      // Poll for results
+      const result = await pollForResults(uploadData.fileId, token);
+      
+      // Update final status
+      onStatusChange?.(result.status);
+      
+      // Add URL from the upload response if available
+      if (uploadData.url) {
+        result.url = uploadData.url;
+      }
+      
+      return result;
+    } else {
+      // Handle case where fileId is undefined
+      const errorResult: UploadResult = {
+        status: 'error',
+        error: 'No file ID returned from upload'
+      };
+      onStatusChange?.('error');
+      return errorResult;
+    }
   } catch (error) {
     console.error('File processing error:', error);
     const errorResult: UploadResult = {
@@ -281,4 +314,4 @@ export const handleFileProcess = async (
     onStatusChange?.('error');
     return errorResult;
   }
-}; 
+};
