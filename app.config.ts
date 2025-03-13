@@ -7,7 +7,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   scheme: "notecompanion",
   version: "1.0.0",
   orientation: "portrait",
-  icon: "./assets/icon.png",
+  icon: "./assets/big-logo.png",
   userInterfaceStyle: "automatic",
   assetBundlePatterns: ["**/*"],
   splash: {
@@ -64,7 +64,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     associatedDomains: [],
   },
   android: {
-    icon: "./assets/icon.png",
+    icon: "./assets/big-logo.png",
     package: "com.notecompanion.app",
     splash: {
       image: "./assets/splash.png",
@@ -148,7 +148,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       "expo-notifications",
       {
-        icon: "./assets/icon.png",
+        icon: "./assets/big-logo.png",
         color: "#ffffff",
       },
     ],

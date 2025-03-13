@@ -215,135 +215,97 @@ export const uploadFile = async (
 };
 
 /**
- * Processes a file with retry logic
+ * Process the file on the server to extract text content and metadata
  */
-export const processFile = async (fileId: number | string, token: string): Promise<void> => {
-  let retryCount = 0;
-  let processResponse;
+export const processFile = async (fileId: string, token: string): Promise<void> => {
+  try {
+    console.log("Processing file with ID:", fileId);
+    
+    const response = await fetch(`${API_URL}/api/process-file`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ fileId }),
+    });
 
-  console.log('Starting file processing for fileId:', fileId);
-  
-  while (retryCount < API_CONFIG.maxRetries) {
-    try {
-      processResponse = await fetch(`${API_URL}/api/process-file`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ fileId }),
-      });
-
-      if (processResponse.ok) {
-        return;
-      }
-
-      // Check if we should retry based on status code
-      if (processResponse.status >= 500 || processResponse.status === 429) {
-        // Server error or rate limit - retry
-        retryCount++;
-        if (retryCount < API_CONFIG.maxRetries) {
-          const delay = API_CONFIG.retryDelay * Math.pow(2, retryCount - 1); // Exponential backoff
-          console.log(`Retrying process request (${retryCount}/${API_CONFIG.maxRetries}) after ${delay}ms. Status: ${processResponse.status}`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          continue;
-        }
-      }
-
-      // Not retryable status code or max retries reached
-      const errorData = await processResponse
-        .json()
-        .catch(() => ({ error: 'Processing failed' }));
-      throw new Error(errorData.error || 'Processing failed');
-    } catch (error: unknown) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.log('Request timed out');
-      }
-      
-      retryCount++;
-      if (retryCount < API_CONFIG.maxRetries) {
-        const delay = API_CONFIG.retryDelay * Math.pow(2, retryCount - 1);
-        console.log(`Retrying after error (${retryCount}/${API_CONFIG.maxRetries}) after ${delay}ms:`, 
-          error instanceof Error ? error.message : 'Unknown error');
-        await new Promise(resolve => setTimeout(resolve, delay));
-      } else {
-        throw error;
-      }
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Error processing file: ${response.status} ${response.statusText}`, errorText);
+      throw new Error(`Failed to process file: ${response.statusText}`);
     }
-  }
 
-  throw new Error('Processing failed after maximum retry attempts');
+    // Success!
+    console.log("File processing request sent successfully");
+  } catch (error) {
+    console.error('Error in processFile:', error);
+    throw error;
+  }
 };
 
 /**
- * Polls for file processing results
+ * Polls the server for results of file processing
  */
-export const pollForResults = async (
-  fileId: number | string,
-  token: string
-): Promise<UploadResult> => {
+export const pollForResults = async (fileId: string, token: string, maxAttempts = 30): Promise<UploadResult> => {
   let attempts = 0;
-  const maxAttempts = 30;
-  const pollInterval = 2000; // 2 seconds
-
-  console.log('Starting to poll for results for fileId:', fileId);
   
+  // Log the fileId being used for polling
+  console.log("Polling for results with fileId:", fileId);
+
   while (attempts < maxAttempts) {
     try {
-      const response = await fetch(
-        `${API_URL}/api/file-status?fileId=${fileId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+      const response = await fetch(`${API_URL}/api/files/${fileId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-      );
-      
+      });
+
       if (!response.ok) {
-        const errorData = await response
-          .json()
-          .catch(() => ({ error: 'Failed to check file status' }));
-        return { 
-          status: 'error', 
-          error: errorData.error || 'Failed to check file status' 
-        };
+        const errorText = await response.text();
+        console.error(`Error polling for results: ${response.status} ${response.statusText}`, errorText);
+        
+        // If the file isn't found, we might need to wait a bit longer
+        if (response.status === 404) {
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retrying
+          continue;
+        }
+        
+        throw new Error(`Failed to poll for results: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log("Poll result:", result);
+
+      // If status is completed or error, return the result
+      if (result.status === 'completed' || result.status === 'error') {
+        return result;
+      }
+
+      // Otherwise wait and try again
+      attempts++;
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retrying
+    } catch (error) {
+      console.error('Error in pollForResults:', error);
+      attempts++;
+      
+      // If we've reached max attempts, throw an error
+      if (attempts >= maxAttempts) {
+        throw new Error('Max polling attempts reached');
       }
       
-      const data = await response.json();
-
-      if (data.error) return { status: 'error', error: data.error, fileId };
-      if (data.status === 'completed') return { 
-        status: 'completed', 
-        text: data.text, 
-        fileId,
-        url: data.url
-      };
-      if (data.status === 'error') return { status: 'error', error: data.error, fileId };
-
-      console.log(`Poll attempt ${attempts}/${maxAttempts}:`, {
-        status: data.status,
-        hasText: !!data.text,
-        textPreview: data.text ? 
-          (typeof data.text === 'string' ? 
-            data.text.substring(0, 50) : 
-            JSON.stringify(data.text).substring(0, 50)) + '...' : 
-          null,
-        hasError: !!data.error,
-        hasUrl: !!data.url
-      });
-      
-      await new Promise((resolve) => setTimeout(resolve, pollInterval));
-      attempts++;
-    } catch (error) {
-      return { 
-        status: 'error', 
-        error: error instanceof Error ? error.message : 'Failed to check file status',
-        fileId
-      };
+      // Otherwise wait and try again
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
   }
 
-  return { status: 'error', error: 'Processing timeout', fileId };
+  // If we get here, we've hit max attempts
+  return {
+    status: 'error',
+    error: 'Timed out waiting for processing results'
+  };
 };
 
 /**
@@ -366,19 +328,43 @@ export const handleFileProcess = async (
     
     // Only process if we have a valid fileId
     if (uploadData.fileId) {
-      // Process file
-      await processFile(uploadData.fileId, token);
+      // Process file - ensure fileId is string
+      const fileIdStr = String(uploadData.fileId);
+      await processFile(fileIdStr, token);
       
       // Poll for results
-      const result = await pollForResults(uploadData.fileId, token);
+      const result = await pollForResults(fileIdStr, token);
       
-      // Update final status
-      onStatusChange?.(result.status);
+      // Clean up duplicate image references if text content exists
+      if (result.status === 'completed' && result.text) {
+        // Get filename safely, ensuring we have a valid string
+        const filename = file.name ? (file.name.split('/').pop() || file.name) : '';
+        
+        if (filename) {
+          // Create pattern to match standard markdown image syntax for this file
+          const stdMarkdownPattern = new RegExp(`!\\[.*?\\]\\(.*?${escapeRegExp(filename)}.*?\\)`, 'g');
+          
+          // Create pattern to match Obsidian wiki-style links for this file
+          const obsidianWikiPattern = new RegExp(`!\\[\\[.*?${escapeRegExp(filename)}.*?\\]\\]`, 'g');
+          
+          // Check if Obsidian wiki-style links exist and result.text is a string
+          if (typeof result.text === 'string' && obsidianWikiPattern.test(result.text)) {
+            // Remove standard markdown image references for the same file
+            result.text = result.text.replace(stdMarkdownPattern, '');
+            
+            // Clean up any double newlines that might have been created
+            result.text = result.text.replace(/\n\n\n+/g, '\n\n').trim();
+          }
+        }
+      }
       
       // Add URL from the upload response if available
       if (uploadData.url) {
         result.url = uploadData.url;
       }
+      
+      // Update final status
+      onStatusChange?.(result.status);
       
       return result;
     } else {
@@ -400,3 +386,10 @@ export const handleFileProcess = async (
     return errorResult;
   }
 };
+
+/**
+ * Helper function to escape special characters in regex patterns
+ */
+function escapeRegExp(string: string): string {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
