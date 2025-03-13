@@ -38,9 +38,33 @@ export default function HomeScreen() {
           if (shareIntent.files && shareIntent.files.length > 0) {
             // Handle shared files
             const file = shareIntent.files[0];
+            
+            // Improved mime type detection for images
+            let mimeType = file.mimeType;
+            const fileExt = file.path.split('.').pop()?.toLowerCase();
+            
+            // Fix missing or incorrect mime types from device
+            if (fileExt && (!mimeType || !mimeType.startsWith('image/'))) {
+              if (['jpg', 'jpeg'].includes(fileExt)) {
+                mimeType = 'image/jpeg';
+              } else if (fileExt === 'png') {
+                mimeType = 'image/png';
+              } else if (fileExt === 'heic') {
+                mimeType = 'image/heic';
+              } else if (fileExt === 'webp') {
+                mimeType = 'image/webp';
+              } else if (fileExt === 'gif') {
+                mimeType = 'image/gif';
+              } else if (fileExt === 'pdf') {
+                mimeType = 'application/pdf';
+              }
+            }
+            
+            console.log(`ShareIntent: Processing file with path=${file.path}, mimeType=${mimeType}, fileName=${file.fileName}`);
+            
             await uploadFile({
               uri: file.path,
-              mimeType: file.mimeType,
+              mimeType: mimeType,
               name: file.fileName,
             });
           } else if (shareIntent.text) {

@@ -56,6 +56,9 @@ export const prepareFile = async (file: SharedFile): Promise<{
       case 'webp':
         mimeType = 'image/webp';
         break;
+      case 'heic':
+        mimeType = 'image/heic';
+        break;
       default:
         mimeType = 'application/octet-stream';
     }
@@ -64,6 +67,32 @@ export const prepareFile = async (file: SharedFile): Promise<{
   // Ensure PDF files are correctly identified regardless of case
   if (mimeType.toLowerCase().includes('pdf')) {
     mimeType = 'application/pdf';
+  }
+  
+  // Fix common image mime type issues
+  if (file.uri?.match(/\.(jpg|jpeg|png|gif|webp|heic)$/i) && !mimeType.startsWith('image/')) {
+    // URI suggests it's an image but mime type doesn't match
+    const extension = file.uri.split('.').pop()?.toLowerCase();
+    if (extension) {
+      switch (extension) {
+        case 'jpg':
+        case 'jpeg':
+          mimeType = 'image/jpeg';
+          break;
+        case 'png':
+          mimeType = 'image/png';
+          break;
+        case 'gif':
+          mimeType = 'image/gif';
+          break;
+        case 'webp':
+          mimeType = 'image/webp';
+          break;
+        case 'heic':
+          mimeType = 'image/heic';
+          break;
+      }
+    }
   }
 
   // Handle platform-specific file URI format
@@ -103,13 +132,52 @@ export const uploadFile = async (
   token: string
 ): Promise<UploadResponse> => {
   try {
+    // Add detailed logging about the file being processed
+    console.log('== FILE UPLOAD DEBUG ==');
+    console.log('Input file properties:', {
+      uri: file.uri,
+      mimeType: file.mimeType,
+      name: file.name,
+      hasTextContent: !!file.text,
+      uriStartsWith: file.uri?.substring(0, 20) + '...',
+    });
+    
     const { fileName, mimeType, fileUri } = await prepareFile(file);
+    
+    // Log the prepared file properties
+    console.log('Prepared file properties:', {
+      fileName,
+      mimeType,
+      fileUri: fileUri?.substring(0, 20) + '...',
+      platform: Platform.OS,
+    });
+    
+    // Skip trying to process text content through OCR
+    if (mimeType === 'text/markdown' || mimeType === 'text/plain') {
+      console.log('Text content detected, sending directly without OCR processing');
+      // For text content, we'll handle it differently
+      if (file.text) {
+        // Return a simulated successful response for text content
+        return {
+          success: true,
+          fileId: `text-${Date.now()}`,
+          status: 'processed',
+          text: file.text
+        } as any;
+      }
+    }
     
     // For React Native environment, we'll use a different approach than browser File objects
     const fileContent = await FileSystem.readAsStringAsync(
       fileUri,
       { encoding: FileSystem.EncodingType.Base64 }
     );
+    
+    console.log('File content base64 stats:', {
+      contentLength: fileContent?.length,
+      contentPrefix: fileContent?.substring(0, 30) + '...',
+      isValidBase64: /^[A-Za-z0-9+/=]+$/.test(fileContent?.substring(0, 100) || ''),
+    });
     
     // Send to our API endpoint which will handle the Vercel Blob upload
     const uploadResponse = await fetch(`${API_URL}/api/upload`, {
@@ -133,6 +201,7 @@ export const uploadFile = async (
     }
 
     const responseData = await uploadResponse.json();
+    console.log('Upload response:', responseData);
     return {
       success: responseData.success,
       fileId: responseData.fileId,
@@ -152,6 +221,8 @@ export const processFile = async (fileId: number | string, token: string): Promi
   let retryCount = 0;
   let processResponse;
 
+  console.log('Starting file processing for fileId:', fileId);
+  
   while (retryCount < API_CONFIG.maxRetries) {
     try {
       processResponse = await fetch(`${API_URL}/api/process-file`, {
@@ -173,7 +244,7 @@ export const processFile = async (fileId: number | string, token: string): Promi
         retryCount++;
         if (retryCount < API_CONFIG.maxRetries) {
           const delay = API_CONFIG.retryDelay * Math.pow(2, retryCount - 1); // Exponential backoff
-          console.log(`Retrying process request (${retryCount}/${API_CONFIG.maxRetries}) after ${delay}ms`);
+          console.log(`Retrying process request (${retryCount}/${API_CONFIG.maxRetries}) after ${delay}ms. Status: ${processResponse.status}`);
           await new Promise(resolve => setTimeout(resolve, delay));
           continue;
         }
@@ -215,6 +286,8 @@ export const pollForResults = async (
   const maxAttempts = 30;
   const pollInterval = 2000; // 2 seconds
 
+  console.log('Starting to poll for results for fileId:', fileId);
+  
   while (attempts < maxAttempts) {
     try {
       const response = await fetch(
@@ -247,6 +320,18 @@ export const pollForResults = async (
       };
       if (data.status === 'error') return { status: 'error', error: data.error, fileId };
 
+      console.log(`Poll attempt ${attempts}/${maxAttempts}:`, {
+        status: data.status,
+        hasText: !!data.text,
+        textPreview: data.text ? 
+          (typeof data.text === 'string' ? 
+            data.text.substring(0, 50) : 
+            JSON.stringify(data.text).substring(0, 50)) + '...' : 
+          null,
+        hasError: !!data.error,
+        hasUrl: !!data.url
+      });
+      
       await new Promise((resolve) => setTimeout(resolve, pollInterval));
       attempts++;
     } catch (error) {
