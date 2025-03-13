@@ -61,15 +61,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="share"
-        options={{
-          title: 'Upload',
-          tabBarIcon: ({ color, size }: TabIconProps) => (
-            <MaterialIcons name="file-upload" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="notes"
         options={{
           title: 'My Notes',
