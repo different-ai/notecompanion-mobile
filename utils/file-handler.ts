@@ -2,6 +2,31 @@ import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import { API_URL, API_CONFIG } from '@/constants/config';
 
+// Basic content moderation function to screen uploads
+const moderateContent = async (text: string | undefined): Promise<{ 
+  isAppropriate: boolean;
+  reason?: string;
+}> => {
+  if (!text) return { isAppropriate: true };
+  
+  // Basic profanity/content check - would use a proper service in production
+  const checkTerms = [
+    'explicit', 'inappropriate', 'offensive', 'banned'
+  ];
+  
+  // Check for any problematic terms
+  for (const term of checkTerms) {
+    if (text.toLowerCase().includes(term)) {
+      return { 
+        isAppropriate: false, 
+        reason: `Content contains potentially inappropriate material (${term})` 
+      };
+    }
+  }
+  
+  return { isAppropriate: true };
+};
+
 export type UploadStatus = 'idle' | 'uploading' | 'processing' | 'completed' | 'error';
 
 export interface SharedFile {
@@ -147,6 +172,19 @@ export const uploadFile = async (
     // For text content, implement a more robust handling strategy
     if ((mimeType === 'text/markdown' || mimeType === 'text/plain') && file.text) {
       console.log('Text content detected, handling locally');
+      
+      // Run content moderation check
+      const moderationResult = await moderateContent(file.text);
+      
+      // If content doesn't pass moderation, reject it
+      if (!moderationResult.isAppropriate) {
+        console.log('Content moderation failed:', moderationResult.reason);
+        return {
+          success: false,
+          status: 'error',
+          error: 'Content failed moderation check. Please review and resubmit.'
+        };
+      }
       
       try {
         // Try to upload to server first

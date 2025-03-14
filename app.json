@@ -21,17 +21,58 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.notecompanion.app"
+      "bundleIdentifier": "com.notecompanion.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to capture images of your notes for OCR processing.",
+        "NSPhotoLibraryUsageDescription": "This app accesses your photo library to let you import images for note processing.",
+        "NSPhotoLibraryAddUsageDescription": "This app can save processed notes to your photo library.",
+        "NSMicrophoneUsageDescription": "This app may use the microphone for voice notes.",
+        "LSApplicationQueriesSchemes": ["mailto", "message", "tel", "itms-apps"]
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "INTERNET"
+      ],
       "package": "com.notecompanion.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-document-picker",
+        {
+          "iCloudContainerEnvironment": "Production"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to capture notes for processing."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to import notes for processing.",
+          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save processed notes to your photo library.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "note-companion-app"
+      }
+    },
+    "privacy": "unlisted"
   }
 }

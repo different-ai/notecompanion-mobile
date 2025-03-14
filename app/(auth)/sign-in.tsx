@@ -9,6 +9,7 @@ import {
   Platform,
   ScrollView,
   Alert,
+  Linking,
 } from 'react-native';
 import { useOAuth, useSignIn } from '@clerk/clerk-expo';
 import * as WebBrowser from 'expo-web-browser';
@@ -202,7 +203,32 @@ export default function SignInScreen() {
             </TouchableOpacity>
           </View>
           <Text style={styles.footerText}>
-            By continuing, you agree to our Terms of Service and Privacy Policy
+            By continuing, you agree to our{' '}
+            <Text 
+              style={[styles.footerLink, styles.inlineLink]}
+              onPress={() => { 
+                if (Platform.OS === 'web') {
+                  window.open('/docs/terms-of-service.md', '_blank');
+                } else {
+                  router.push('/docs/terms-of-service');
+                }
+              }}
+            >
+              Terms of Service
+            </Text>{' '}
+            and{' '}
+            <Text 
+              style={[styles.footerLink, styles.inlineLink]}
+              onPress={() => {
+                if (Platform.OS === 'web') {
+                  window.open('/docs/privacy-policy.md', '_blank');
+                } else {
+                  router.push('/docs/privacy-policy');
+                }
+              }}
+            >
+              Privacy Policy
+            </Text>
           </Text>
         </View>
       </ScrollView>
@@ -317,6 +343,9 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     fontSize: 14,
     fontWeight: '600',
+  },
+  inlineLink: {
+    textDecorationLine: 'underline',
   },
   footerDot: {
     color: '#666',

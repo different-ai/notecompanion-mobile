@@ -1,0 +1,57 @@
+# Note Companion - App Store Description
+
+## App Name
+Note Companion AI
+
+## Subtitle
+Bridge Analog to Digital Notes
+
+## Description
+Note Companion is your gateway from analog materials to a digital knowledge system. Effortlessly convert handwritten notes, documents, images, and voice memos into searchable, organized text.
+
+Note Companion solves the common challenges of analog-to-digital conversion:
+• No more lost context from scattered notebooks and paper documents
+• Eliminate manual transcription of handwritten notes and recordings
+• Streamline your workflow with a single app instead of multiple disconnected tools
+
+Key Features:
+• Smart Capture: Take photos of handwritten notes or import PDFs and voice memos
+• AI-Powered OCR: Accurately extract text from any document or image
+• Seamless Integration: Works with your existing note-taking ecosystem (with future Obsidian sync)
+• Local-First Storage: Your notes are stored locally with optional cloud sync
+• One-Tap Sharing: Easily share processed notes with others
+
+Privacy & Security:
+Note Companion respects your privacy with local-first storage and optional encrypted sync. We never sell your data or use it for advertising.
+
+Permissions:
+• Camera: For capturing notes and documents
+• Photo Library: For accessing saved images
+• Network: For optional cloud sync and sharing
+
+Download today and bridge the gap between your physical notes and digital knowledge system!
+
+## Keywords
+notes, ocr, document scanner, transcription, analog to digital, handwriting recognition, knowledge management, productivity, local-first
+
+## Category
+Productivity
+
+## Age Rating
+4+
+
+## What to Test
+Please test the following core features:
+
+1. Capturing handwritten notes: Take a photo of handwritten text and verify text extraction
+2. Document import: Test importing PDFs and images from your device's files/photos
+3. Text conversion accuracy: Verify the app correctly extracts text from various document types
+4. Note organization: Test creating, viewing, and managing notes within the app
+5. Share functionality: Test sharing processed notes via standard sharing options
+6. Local storage: Verify notes are properly saved locally and can be accessed offline
+
+No special accounts or external services are required for testing. The app functions fully with local-only storage.
+
+Login credentials for testing (if needed):
+Email: ben+notecompanion@embedbase.xyz
+Password: Test1234!'''

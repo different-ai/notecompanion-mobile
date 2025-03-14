@@ -4,6 +4,34 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { UploadedFile } from '@/utils/api';
 import * as FileSystem from 'expo-file-system';
 
+// Content moderation check for displaying files
+const runContentModeration = async (text: string | undefined): Promise<{
+  isAppropriate: boolean;
+  contentFlags?: string[];
+}> => {
+  try {
+    // Simple text moderation - can be replaced with a more comprehensive API
+    if (!text) return { isAppropriate: true };
+    
+    const profanityList = [
+      'vulgar', 'explicit', 'offensive', 'inappropriate'
+    ];
+    
+    const contentFlags = profanityList.filter(term => 
+      text.toLowerCase().includes(term.toLowerCase())
+    );
+    
+    return {
+      isAppropriate: contentFlags.length === 0,
+      contentFlags: contentFlags.length > 0 ? contentFlags : undefined
+    };
+  } catch (error) {
+    console.error('Error running content moderation:', error);
+    // Default to appropriate if the check fails
+    return { isAppropriate: true };
+  }
+};
+
 interface FileCardProps {
   file: UploadedFile;
   onDelete: (id: number) => void;
@@ -11,6 +39,21 @@ interface FileCardProps {
 }
 
 export function FileCard({ file, onDelete, onView }: FileCardProps) {
+  const [moderation, setModeration] = React.useState<{
+    isAppropriate: boolean;
+    contentFlags?: string[];
+  }>({ isAppropriate: true });
+  
+  React.useEffect(() => {
+    // Run content moderation check
+    if (file.extractedText) {
+      runContentModeration(file.extractedText)
+        .then(result => {
+          setModeration(result);
+        });
+    }
+  }, [file.extractedText]);
+
   // Format date string to a more readable format
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -119,7 +162,14 @@ export function FileCard({ file, onDelete, onView }: FileCardProps) {
         </View>
       </View>
       
-      {file.extractedText && (
+      {file.extractedText && !moderation.isAppropriate ? (
+        <View style={styles.contentFilteredContainer}>
+          <MaterialIcons name="warning" size={18} color="#f59e0b" />
+          <Text style={styles.contentFilteredText}>
+            Content flagged for review
+          </Text>
+        </View>
+      ) : file.extractedText && (
         <View style={styles.previewContainer}>
           <Text style={styles.previewText} numberOfLines={2}>
             {getContentPreview()}
@@ -190,6 +240,19 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 3.84,
     elevation: 2,
+  },
+  contentFilteredContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff8e6',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  contentFilteredText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#92400e',
   },
   fileHeader: {
     flexDirection: 'row',

@@ -1,8 +1,17 @@
-# Welcome to your Expo app 👋
+# Note Companion - Your AI-Powered Note Organizer
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Note Companion is a mobile app that helps you capture, organize, and enhance your notes with AI-powered features.
 
-## Get started
+## Features
+
+- **Smart Note Organization**: Automatically categorize and organize your notes
+- **Scan & Extract**: Capture physical notes and extract text with OCR
+- **Local-First Storage**: Your notes stay on your device by default
+- **Secure Cloud Sync**: Optional encrypted sync across devices
+- **AI Enhancement**: Summarize, organize, and improve your notes
+- **Simple Sharing**: Share notes with others via links or direct sharing
+
+## Getting Started
 
 1. Install dependencies
 
@@ -16,35 +25,23 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
     npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+## Privacy & Security
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+Note Companion prioritizes your privacy:
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- Your notes are stored locally by default
+- End-to-end encryption for cloud sync
+- Transparent data handling practices
+- No selling of your data to third parties
 
-## Get a fresh project
+## Contributing
 
-When you're ready, run:
+We welcome contributions! Please see our CONTRIBUTING.md file for details on how to get involved.
 
-```bash
-npm run reset-project
-```
+## License
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Learn more
+## Support
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Need help? Contact us at support@notecompanion.com
