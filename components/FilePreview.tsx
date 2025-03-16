@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Image,
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import Pdf from 'react-native-pdf';
 import { MaterialIcons } from '@expo/vector-icons';
+import { convertHeicToJpeg } from '@/utils/file-handler';
 
 const { width } = Dimensions.get('window');
 
@@ -27,6 +28,26 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
 }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [convertedUrl, setConvertedUrl] = useState<string | undefined>(undefined);
+  
+  // Handle HEIC conversion if needed
+  useEffect(() => {
+    // Only run conversion if we have a HEIC/HEIF file
+    if (isHeic && fileUrl) {
+      setLoading(true);
+      // Convert HEIC to JPEG for preview
+      convertHeicToJpeg(fileUrl)
+        .then(jpegUrl => {
+          setConvertedUrl(jpegUrl);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error('Error converting HEIC for preview:', err);
+          setError('Failed to convert HEIC image for preview');
+          setLoading(false);
+        });
+    }
+  }, [fileUrl, isHeic]);
 
   if (!fileUrl) {
     return (
@@ -39,6 +60,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
 
   const isPdf = mimeType?.toLowerCase().includes('pdf');
   const isImage = mimeType?.toLowerCase().includes('image');
+  const isHeic = mimeType?.toLowerCase().includes('heic') || fileUrl?.toLowerCase().endsWith('.heic') || fileUrl?.toLowerCase().endsWith('.heif');
 
   // For preview dimensions
   const previewWidth = width - 40; // Accounting for padding
@@ -80,11 +102,15 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
         </View>
       );
     } else if (isImage) {
+      // For HEIC files, use the converted URL if available
+      const imageUri = (isHeic && convertedUrl) ? convertedUrl : fileUrl;
+      const loadingMessage = isHeic ? 'Converting HEIC image...' : 'Loading image...';
+      
       // Image Preview
       return (
         <View style={styles.fileContainer}>
           <Image
-            source={{ uri: fileUrl }}
+            source={{ uri: imageUri }}
             style={[styles.imagePreview, { width: previewWidth, height: previewHeight }]}
             onLoad={handleLoadComplete}
             onError={({ nativeEvent: { error } }) => {
@@ -97,7 +123,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
           {loading && (
             <View style={[styles.loadingOverlay, { width: previewWidth, height: previewHeight }]}>
               <ActivityIndicator size="large" color="#007AFF" />
-              <Text style={styles.loadingText}>Loading image...</Text>
+              <Text style={styles.loadingText}>{loadingMessage}</Text>
             </View>
           )}
         </View>
@@ -136,7 +162,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
               color="#007AFF" 
             />
             <Text style={styles.previewHeaderText}>
-              {isPdf ? 'PDF Preview' : isImage ? 'Image Preview' : 'File Preview'}
+              {isPdf ? 'PDF Preview' : isHeic ? 'HEIC Image Preview' : isImage ? 'Image Preview' : 'File Preview'}
             </Text>
           </View>
           {renderPreview()}

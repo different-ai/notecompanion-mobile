@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import { API_URL, API_CONFIG } from '@/constants/config';
+import RNHeicConverter from 'react-native-heic-converter';
 
 // Basic content moderation function to screen uploads
 const moderateContent = async (text: string | undefined): Promise<{ 
@@ -94,6 +95,10 @@ export const prepareFile = async (
       case 'gif':
         mimeType = 'image/gif';
         break;
+      case 'heic':
+      case 'heif':
+        mimeType = 'image/heic';
+        break;
       case 'pdf':
         mimeType = 'application/pdf';
         break;
@@ -129,11 +134,38 @@ export const prepareFile = async (
   } 
   // For file content, normalize URI based on platform
   else if (file.uri) {
-    fileUri = Platform.select({
+    let normalizedUri = Platform.select({
       ios: file.uri.replace('file://', ''),
       android: file.uri,
       default: file.uri,
     });
+    
+    // If it's a HEIC/HEIF file, convert to JPEG for better compatibility
+    if (mimeType === 'image/heic' || fileExtension?.toLowerCase() === 'heic' || fileExtension?.toLowerCase() === 'heif') {
+      try {
+        console.log('Detected HEIC/HEIF image, converting to JPEG');
+        const jpegUri = await convertHeicToJpeg(normalizedUri);
+        
+        // Update mimetype and filename if conversion was successful
+        if (jpegUri) {
+          mimeType = 'image/jpeg';
+          // Update filename to reflect the new format
+          const filenameParts = fileName.split('.');
+          if (filenameParts.length > 1) {
+            filenameParts[filenameParts.length - 1] = 'jpg';
+            fileName = filenameParts.join('.');
+          } else {
+            fileName = `${fileName}.jpg`;
+          }
+          normalizedUri = jpegUri;
+        }
+      } catch (error) {
+        console.error('Failed to convert HEIC to JPEG:', error);
+        // Continue with original file if conversion fails
+      }
+    }
+    
+    fileUri = normalizedUri;
   }
   
   return {
@@ -543,6 +575,27 @@ export const handleFileProcess = async (
 function escapeRegExp(string: string): string {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
+
+/**
+ * Converts HEIC/HEIF images to JPEG format
+ */
+export const convertHeicToJpeg = async (fileUri: string): Promise<string> => {
+  try {
+    console.log('Converting HEIC to JPEG:', fileUri);
+    
+    // Use react-native-heic-converter to convert the file
+    const result = await RNHeicConverter.convert({
+      path: fileUri,
+      quality: 0.8, // Adjust quality as needed
+    });
+    
+    console.log('HEIC conversion result:', result);
+    return result.path;
+  } catch (error) {
+    console.error('Error converting HEIC to JPEG:', error);
+    throw error;
+  }
+};
 
 // Directory for storing pending uploads
 const PENDING_UPLOADS_DIR = `${FileSystem.documentDirectory}pending_uploads/`;
