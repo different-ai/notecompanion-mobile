@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
 import * as Sharing from 'expo-sharing';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 
 interface SharedFile {
   uri: string;
@@ -39,6 +40,45 @@ export const getMimeTypeFromExtension = (filename: string): string => {
 export const getFileNameFromUri = (uri: string): string => {
   const parts = decodeURIComponent(uri).split('/');
   return parts[parts.length - 1] || `shared-file-${Date.now()}`;
+};
+
+/**
+ * Ensures an image is in JPEG format (converts HEIC/HEIF if needed)
+ * @param uri The URI of the image to process
+ * @returns The URI of the processed JPEG image
+ */
+export const ensureJpegFormat = async (uri: string): Promise<string> => {
+  // Check file extension
+  const fileExtension = uri.split('.').pop()?.toLowerCase();
+  
+  // If it's already a JPEG, just return the URI
+  if (fileExtension === 'jpg' || fileExtension === 'jpeg') {
+    return uri;
+  }
+  
+  // Special handling for HEIC/HEIF formats which are common on iOS
+  const isHeicFormat = fileExtension === 'heic' || fileExtension === 'heif';
+  
+  // On iOS, need to convert HEIC files
+  if (Platform.OS === 'ios' && isHeicFormat) {
+    console.log('[ensureJpegFormat] Converting HEIC/HEIF image to JPEG');
+  }
+  
+  // Convert to JPEG using image manipulator
+  try {
+    const manipResult = await manipulateAsync(
+      uri,
+      [{ resize: { width: 1200 } }], // Resize to a reasonable dimension
+      { format: SaveFormat.JPEG, compress: 0.8 }
+    );
+    
+    console.log('[ensureJpegFormat] Image successfully converted to JPEG');
+    return manipResult.uri;
+  } catch (error) {
+    console.error('[ensureJpegFormat] Error converting image to JPEG:', error);
+    // If conversion fails, return original URI
+    return uri;
+  }
 };
 
 export const processSharedFile = async (file: SharedFile): Promise<SharedFile> => {
@@ -91,6 +131,33 @@ export const processSharedFile = async (file: SharedFile): Promise<SharedFile> =
     const mimeType = file.mimeType || getMimeTypeFromExtension(finalFileName);
     console.log('[processSharedFile] Determined MIME type:', mimeType);
 
+    // Convert HEIC/HEIF images to JPEG if needed
+    if (mimeType.startsWith('image/')) {
+      console.log('[processSharedFile] Processing image file');
+      
+      // Check if image needs conversion (HEIC/HEIF to JPEG)
+      const fileExtension = finalFileName.split('.').pop()?.toLowerCase();
+      const isHeicFormat = fileExtension === 'heic' || fileExtension === 'heif';
+      
+      if (isHeicFormat || mimeType === 'image/heic' || mimeType === 'image/heif') {
+        console.log('[processSharedFile] HEIC/HEIF image detected, converting to JPEG');
+        
+        // Convert to JPEG format
+        const jpegUri = await ensureJpegFormat(file.uri);
+        
+        // Create a new filename with jpg extension
+        const newFileName = finalFileName.replace(/\.(heic|heif)$/i, '.jpg');
+        
+        const result = {
+          uri: jpegUri,
+          mimeType: 'image/jpeg',
+          name: newFileName,
+        };
+        console.log('[processSharedFile] Converted to JPEG:', JSON.stringify(result, null, 2));
+        return result;
+      }
+    }
+
     // Handle file content
     console.log('\n[processSharedFile] === Content Processing ===');
     if (mimeType.startsWith('text/')) {
@@ -142,4 +209,4 @@ export const cleanupSharedFile = async (uri: string): Promise<void> => {
 
 export const isShareAvailable = async () => {
   return await Sharing.isAvailableAsync();
-}; 
+};

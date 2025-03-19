@@ -4,7 +4,7 @@ import { useFonts } from 'expo-font';
 import { Stack, router, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
@@ -30,6 +30,9 @@ export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
   const [isProcessingShare, setIsProcessingShare] = useState(false);
+  const [initialUrl, setInitialUrl] = useState<string | null>(null);
+  const [isReady, setIsReady] = useState(false);
+  const isMounted = useRef(false);
 
   const publishableKey = CLERK_PUBLISHABLE_KEY;
 
@@ -38,6 +41,31 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [loaded]);
+
+  // Safe navigation function to ensure we only navigate when component is mounted
+  const safeNavigate = (pathname: string, params?: Record<string, any>) => {
+    console.log(`[RootLayout] Safe Navigate - isMounted: ${isMounted.current}, isReady: ${isReady}, pathname: ${pathname}`);
+    
+    if (!isMounted.current || !isReady) {
+      console.log('[RootLayout] Component not fully ready, delaying navigation');
+      // Set a small timeout to ensure the component is mounted and ready
+      setTimeout(() => {
+        console.log('[RootLayout] Attempting delayed navigation');
+        if (isMounted.current && isReady) {
+          console.log('[RootLayout] Executing delayed navigation to:', pathname);
+          router.replace(params ? { pathname, params } : pathname);
+        } else {
+          console.log('[RootLayout] Still not ready for navigation, storing URL for later');
+          // Store the navigation intent for later if we're still not ready
+          setInitialUrl(JSON.stringify({ pathname, params }));
+        }
+      }, 300); // Small delay to ensure component is mounted
+      return;
+    }
+    
+    console.log('[RootLayout] Navigating immediately to:', pathname);
+    router.replace(params ? { pathname, params } : pathname);
+  };
 
   const handleIncomingURL = async (url: string | null) => {
     console.log('\n[RootLayout] ===== Starting URL Processing =====');
@@ -112,10 +140,9 @@ export default function RootLayout() {
           
           console.log('\n[RootLayout] === Navigation ===');
           console.log('[RootLayout] Navigating to share screen');
-          router.replace({
-            pathname: '/(tabs)/share',
-            params: { sharedFile: JSON.stringify(fileData) }
-          });
+          
+          // Use safe navigation instead of direct router.replace
+          safeNavigate('/(tabs)/share', { sharedFile: JSON.stringify(fileData) });
 
         } catch (innerError) {
           // If anything fails with file processing, still go to home page
@@ -123,7 +150,7 @@ export default function RootLayout() {
           
           // Navigate to the home tab instead of showing not found
           console.log('[RootLayout] Navigating to home due to error');
-          router.replace('/(tabs)');
+          safeNavigate('/(tabs)');
         } finally {
           // Always set processing to false when done
           setIsProcessingShare(false);
@@ -152,10 +179,7 @@ export default function RootLayout() {
             console.log('[RootLayout] Processed file data:', fileData);
             
             console.log('[RootLayout] Navigating to share screen');
-            router.replace({
-              pathname: '/(tabs)/share',
-              params: { sharedFile: JSON.stringify(fileData) }
-            });
+            safeNavigate('/(tabs)/share', { sharedFile: JSON.stringify(fileData) });
   
             // Clean up temporary files after processing
             if (Platform.OS === 'android') {
@@ -172,20 +196,17 @@ export default function RootLayout() {
             console.log('[RootLayout] Text data:', textData);
   
             console.log('[RootLayout] Navigating to share screen with text');
-            router.replace({
-              pathname: '/(tabs)/share',
-              params: { sharedFile: JSON.stringify(textData) }
-            });
+            safeNavigate('/(tabs)/share', { sharedFile: JSON.stringify(textData) });
           } else {
             // No valid parameters found, go to home
             console.log('[RootLayout] No valid parameters found, going to home');
-            router.replace('/(tabs)');
+            safeNavigate('/(tabs)');
           }
         } catch (innerError) {
           // If anything fails, still go to home page
           console.error('[RootLayout] Error processing share path:', innerError);
           console.log('[RootLayout] Navigating to home due to error');
-          router.replace('/(tabs)');
+          safeNavigate('/(tabs)');
         } finally {
           // Always set processing to false when done
           setIsProcessingShare(false);
@@ -193,17 +214,65 @@ export default function RootLayout() {
       } else {
         // Unknown path, go to home
         console.log('[RootLayout] Unknown path, going to home');
-        router.replace('/(tabs)');
+        safeNavigate('/(tabs)');
         setIsProcessingShare(false);
       }
     } catch (error) {
       console.error('[RootLayout] Error handling shared content:', error);
       // For any unhandled error, redirect to home
       console.log('[RootLayout] Navigating to home due to unhandled error');
-      router.replace('/(tabs)');
+      safeNavigate('/(tabs)');
       setIsProcessingShare(false);
     }
   };
+
+  // Setup component mounted state FIRST - this must run before URL handling
+  useEffect(() => {
+    console.log('[RootLayout] Setting isMounted flag to true');
+    isMounted.current = true;
+    
+    return () => {
+      console.log('[RootLayout] Setting isMounted flag to false');
+      isMounted.current = false;
+    };
+  }, []);
+
+  // Handle delayed navigation after component is mounted and any stored URL
+  useEffect(() => {
+    if (!isMounted.current || !isReady) return;
+    
+    // If we have a delayed URL to handle, process it now
+    if (initialUrl) {
+      try {
+        // Check if it's a stored navigation object
+        if (initialUrl.startsWith('{')) {
+          const navData = JSON.parse(initialUrl);
+          console.log('[RootLayout] Processing stored navigation:', navData);
+          router.replace(navData.params ? { pathname: navData.pathname, params: navData.params } : navData.pathname);
+        } else {
+          // Otherwise it's a URL to process
+          console.log('[RootLayout] Processing delayed URL now that component is mounted:', initialUrl);
+          handleIncomingURL(initialUrl);
+        }
+      } catch (e) {
+        console.error('[RootLayout] Error handling stored URL data:', e);
+        // Fallback to home on error
+        router.replace('/(tabs)');
+      }
+      setInitialUrl(null);
+    }
+  }, [initialUrl, isReady]);
+
+  // Mark component as ready after Stack is rendered
+  useEffect(() => {
+    // Set a small delay to ensure the Stack is fully rendered
+    const timer = setTimeout(() => {
+      console.log('[RootLayout] Setting isReady to true');
+      setIsReady(true);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [loaded]);
 
   // Add logging for URL handling setup
   useEffect(() => {
@@ -212,21 +281,27 @@ export default function RootLayout() {
     Linking.getInitialURL().then(url => {
       console.log('[RootLayout] Initial URL:', url);
       if (url) {
-        // If we have a URL on initial load, we want to handle it before proceeding
-        handleIncomingURL(url);
+        // If we have a URL on initial load, we want to handle it
+        // But delay processing until the component is mounted and ready
+        setInitialUrl(url);
       }
     });
 
     // Subscribe to URL open events
     const subscription = Linking.addEventListener('url', ({ url }) => {
       console.log('[RootLayout] URL open event:', url);
-      handleIncomingURL(url);
+      if (isMounted.current && isReady) {
+        handleIncomingURL(url);
+      } else {
+        console.log('[RootLayout] Delaying URL handling until component is mounted and ready');
+        setInitialUrl(url);
+      }
     });
 
     return () => {
       subscription.remove();
     };
-  }, []);
+  }, [isReady]);
 
   if (!loaded) {
     return null;
