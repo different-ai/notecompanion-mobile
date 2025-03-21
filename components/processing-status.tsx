@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { UploadStatus } from '@/utils/file-handler';
-import { FilePreview } from './FilePreview';
+import { FilePreview } from './file-preview';
+import { TextDocumentViewer } from './text-document-viewer';
 
 interface ProcessingStatusProps {
   status: UploadStatus;
@@ -52,11 +53,7 @@ export const ProcessingStatus: React.FC<ProcessingStatusProps> = ({
           <View style={styles.resultHeader}>
             <MaterialIcons name="check-circle" size={24} color="#4CAF50" />
             <Text style={styles.successText}>
-              {typeof result === 'string' 
-                ? result 
-                : result && typeof result === 'object' && 'extractedText' in result
-                  ? result.extractedText 
-                  : 'File processed successfully'}
+              File processed successfully
             </Text>
           </View>
           
@@ -67,6 +64,18 @@ export const ProcessingStatus: React.FC<ProcessingStatusProps> = ({
                 fileUrl={fileUrl} 
                 mimeType={mimeType} 
                 fileName={fileName}
+                textContent={result && typeof result === 'object' && 'extractedText' in result ? result.extractedText : undefined}
+              />
+            </View>
+          )}
+
+          {/* Display extracted text content if available and not already shown in preview */}
+          {result && typeof result === 'object' && 'extractedText' in result && result.extractedText && !mimeType?.includes('text') && !mimeType?.includes('markdown') && (
+            <View style={styles.textContentContainer}>
+              <Text style={styles.textContentTitle}>Extracted Text</Text>
+              <TextDocumentViewer 
+                content={result.extractedText}
+                title="Extracted Content"
               />
             </View>
           )}
@@ -243,5 +252,15 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 16,
+  },
+  textContentContainer: {
+    width: '100%',
+    marginTop: 16,
+  },
+  textContentTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 8,
   },
 });

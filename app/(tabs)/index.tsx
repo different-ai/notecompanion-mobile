@@ -323,6 +323,9 @@ export default function HomeScreen() {
         <ProcessingStatus
           status={status}
           result={uploadResult?.text !== undefined ? uploadResult.text : uploadResult?.error}
+          fileUrl={uploadResult?.fileUrl}
+          mimeType={uploadResult?.mimeType}
+          fileName={uploadResult?.fileName}
           onRetry={handleRetry}
           showDetails={true}
         />

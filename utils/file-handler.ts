@@ -42,6 +42,9 @@ export interface UploadResult {
   error?: string;
   fileId?: number | string;
   url?: string;
+  fileUrl?: string;
+  mimeType?: string;
+  fileName?: string;
 }
 
 export interface UploadResponse {
@@ -50,6 +53,10 @@ export interface UploadResponse {
   status: string;
   url?: string;
   text?: string;
+  error?: string;
+  fileUrl?: string;
+  mimeType?: string;
+  fileName?: string;
 }
 
 /**

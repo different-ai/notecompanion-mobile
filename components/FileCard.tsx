@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Share, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Share, Alert, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { UploadedFile } from '@/utils/api';
 import * as FileSystem from 'expo-file-system';
+import { useRouter } from 'expo-router';
 
 // Content moderation check for displaying files
 const runContentModeration = async (text: string | undefined): Promise<{
@@ -39,6 +40,7 @@ interface FileCardProps {
 }
 
 export function FileCard({ file, onDelete, onView }: FileCardProps) {
+  const router = useRouter();
   const [moderation, setModeration] = React.useState<{
     isAppropriate: boolean;
     contentFlags?: string[];
@@ -144,6 +146,24 @@ export function FileCard({ file, onDelete, onView }: FileCardProps) {
     }
   };
 
+  const handleView = () => {
+    if (!file.processed) {
+      Alert.alert('Note Not Ready', 'Please wait until processing is complete before viewing.');
+      return;
+    }
+
+    // Navigate to the file viewer screen
+    router.push({
+      pathname: '/file-viewer',
+      params: {
+        fileUrl: file.blobUrl,
+        mimeType: file.mimeType,
+        fileName: file.name,
+        content: file.extractedText,
+      },
+    });
+  };
+
   return (
     <View style={styles.card}>
       <View style={styles.fileHeader}>
@@ -169,11 +189,29 @@ export function FileCard({ file, onDelete, onView }: FileCardProps) {
             Content flagged for review
           </Text>
         </View>
-      ) : file.extractedText && (
+      ) : (
         <View style={styles.previewContainer}>
-          <Text style={styles.previewText} numberOfLines={2}>
-            {getContentPreview()}
-          </Text>
+          {file.mimeType?.includes('image') && file.blobUrl ? (
+            <Image
+              source={{ uri: file.blobUrl }}
+              style={styles.imagePreview}
+              resizeMode="cover"
+            />
+          ) : file.mimeType?.includes('pdf') && file.blobUrl ? (
+            <View style={styles.pdfPreviewContainer}>
+              <MaterialIcons name="picture-as-pdf" size={48} color="#007AFF" />
+              <Text style={styles.pdfPreviewText}>PDF Document</Text>
+            </View>
+          ) : file.extractedText ? (
+            <Text style={styles.previewText} numberOfLines={2}>
+              {getContentPreview()}
+            </Text>
+          ) : (
+            <View style={styles.noPreviewContainer}>
+              <MaterialIcons name="insert-drive-file" size={48} color="#8E8E93" />
+              <Text style={styles.noPreviewText}>No preview available</Text>
+            </View>
+          )}
         </View>
       )}
 
@@ -192,7 +230,7 @@ export function FileCard({ file, onDelete, onView }: FileCardProps) {
       <View style={styles.actionButtons}>
         <TouchableOpacity
           style={styles.viewButton}
-          onPress={() => onView(file)}
+          onPress={handleView}
           disabled={!file.processed}
         >
           <MaterialIcons name="visibility" size={20} color={file.processed ? "#007AFF" : "#AAAAAA"} />
@@ -282,12 +320,36 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   previewContainer: {
-    backgroundColor: '#f9f9f9',
+    height: 120,
+    backgroundColor: '#f8f9fa',
     borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    borderLeftWidth: 3,
-    borderLeftColor: '#007AFF',
+    overflow: 'hidden',
+    marginVertical: 12,
+  },
+  imagePreview: {
+    width: '100%',
+    height: '100%',
+  },
+  pdfPreviewContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+  },
+  pdfPreviewText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#666',
+  },
+  noPreviewContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noPreviewText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#8E8E93',
   },
   previewText: {
     fontSize: 14,
