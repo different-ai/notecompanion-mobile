@@ -21,6 +21,10 @@ import {
   UploadResult, 
   handleFileProcess 
 } from "@/utils/file-handler";
+import { ThemedView } from "@/components/ThemedView";
+import { ThemedText } from "@/components/ThemedText";
+import { useSemanticColor } from "@/hooks/useThemeColor";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   const { getToken } = useAuth();
@@ -29,6 +33,8 @@ export default function HomeScreen() {
   const [status, setStatus] = useState<UploadStatus>("idle");
   const params = useLocalSearchParams<{ sharedFile?: string }>();
   const { shareIntent } = useShareIntent();
+  const primaryColor = useSemanticColor('primary');
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     // Handle shared content
@@ -234,16 +240,20 @@ export default function HomeScreen() {
   };
 
   const renderHeader = () => (
-    <View style={styles.header}>
-      <MaterialIcons name="folder" size={48} color="#007AFF" />
-      <Text style={styles.title}>Note Companion</Text>
-      <Text style={styles.subtitle}>AI-powered document organization</Text>
-    </View>
+    <ThemedView variant="elevated" style={[styles.header, { paddingTop: Math.max(20, insets.top) }]}>
+      <View style={styles.titleContainer}>
+        <MaterialIcons name="home" size={28} color={primaryColor} style={styles.icon} />
+        <ThemedText type="heading" style={styles.headerTitle}>Home</ThemedText>
+      </View>
+      <ThemedText colorName="textSecondary" type="label" style={styles.headerSubtitle}>
+        Extract text from your documents and images
+      </ThemedText>
+    </ThemedView>
   );
 
   const renderExplanation = () => (
     <View style={styles.explanationCard}>
-      <MaterialIcons name="auto-awesome" size={24} color="#007AFF" />
+      <MaterialIcons name="auto-awesome" size={24} color={primaryColor} />
       <Text style={styles.explanationTitle}>
         Get OCR from any image or pdf
       </Text>
@@ -256,50 +266,60 @@ export default function HomeScreen() {
 
   const renderUploadButtons = () => (
     <View style={styles.uploadButtons}>
-      <TouchableOpacity
-        style={[
-          styles.uploadButton,
-          (status !== "idle" && status !== "completed" && status !== "error") && styles.uploadButtonDisabled,
-        ]}
-        onPress={pickDocument}
-        disabled={status !== "idle" && status !== "completed" && status !== "error"}
-      >
-        <View style={styles.uploadButtonContent}>
-          <MaterialIcons name="file-upload" size={32} color="#007AFF" />
-          <Text style={styles.uploadButtonText}>Upload File</Text>
-          <Text style={styles.uploadButtonSubtext}>PDF or Image</Text>
-        </View>
-      </TouchableOpacity>
+      <View style={styles.uploadButtonRow}>
+        <TouchableOpacity
+          style={[
+            styles.uploadButtonWrapper,
+            (status !== "idle" && status !== "completed" && status !== "error") && styles.uploadButtonDisabled,
+          ]}
+          onPress={pickDocument}
+          disabled={status !== "idle" && status !== "completed" && status !== "error"}
+        >
+          <View style={styles.uploadButtonGradient}></View>
+          <View style={styles.uploadButtonContent}>
+            <MaterialIcons name="file-upload" size={32} color={primaryColor} />
+            <Text style={styles.uploadButtonText}>Upload File</Text>
+            <Text style={styles.uploadButtonSubtext}>PDF or Image</Text>
+          </View>
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[
-          styles.uploadButton,
-          (status !== "idle" && status !== "completed" && status !== "error") && styles.uploadButtonDisabled,
-        ]}
-        onPress={pickPhotos}
-        disabled={status !== "idle" && status !== "completed" && status !== "error"}
-      >
-        <View style={styles.uploadButtonContent}>
-          <MaterialIcons name="photo-library" size={32} color="#007AFF" />
-          <Text style={styles.uploadButtonText}>Photo Library</Text>
-          <Text style={styles.uploadButtonSubtext}>Choose Photos</Text>
-        </View>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.uploadButtonWrapper,
+            (status !== "idle" && status !== "completed" && status !== "error") && styles.uploadButtonDisabled,
+          ]}
+          onPress={pickPhotos}
+          disabled={status !== "idle" && status !== "completed" && status !== "error"}
+        >
+          <View style={styles.uploadButtonGradient}></View>
+          <View style={styles.uploadButtonContent}>
+            <MaterialIcons name="photo-library" size={32} color={primaryColor} />
+            <Text style={styles.uploadButtonText}>Photo Library</Text>
+            <Text style={styles.uploadButtonSubtext}>Choose Photos</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
 
-      <TouchableOpacity
-        style={[
-          styles.uploadButton,
-          (status !== "idle" && status !== "completed" && status !== "error") && styles.uploadButtonDisabled,
-        ]}
-        onPress={takePhoto}
-        disabled={status !== "idle" && status !== "completed" && status !== "error"}
-      >
-        <View style={styles.uploadButtonContent}>
-          <MaterialIcons name="camera-alt" size={32} color="#007AFF" />
-          <Text style={styles.uploadButtonText}>Take Photo</Text>
-          <Text style={styles.uploadButtonSubtext}>Document or Note</Text>
-        </View>
-      </TouchableOpacity>
+      <View style={styles.uploadButtonRow}>
+        <TouchableOpacity
+          style={[
+            styles.uploadButtonWrapper,
+            (status !== "idle" && status !== "completed" && status !== "error") && styles.uploadButtonDisabled,
+          ]}
+          onPress={takePhoto}
+          disabled={status !== "idle" && status !== "completed" && status !== "error"}
+        >
+          <View style={styles.uploadButtonGradient}></View>
+          <View style={styles.uploadButtonContent}>
+            <MaterialIcons name="camera-alt" size={32} color={primaryColor} />
+            <Text style={styles.uploadButtonText}>Take Photo</Text>
+            <Text style={styles.uploadButtonSubtext}>Document or Note</Text>
+          </View>
+        </TouchableOpacity>
+        
+        {/* Empty placeholder to maintain grid layout */}
+        <View style={styles.uploadButtonWrapper} />
+      </View>
     </View>
   );
 
@@ -314,57 +334,70 @@ export default function HomeScreen() {
   );
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.mainSection}>
-        {renderHeader()}
-        {renderExplanation()}
-        {renderUploadButtons()}
-        
-        <ProcessingStatus
-          status={status}
-          result={uploadResult?.text !== undefined ? uploadResult.text : uploadResult?.error}
-          fileUrl={uploadResult?.fileUrl}
-          mimeType={uploadResult?.mimeType}
-          fileName={uploadResult?.fileName}
-          onRetry={handleRetry}
-          showDetails={true}
-        />
+    <ThemedView style={styles.container}>
+      {renderHeader()}
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.mainSection}>
+          {renderExplanation()}
+          {renderUploadButtons()}
+          
+          <ProcessingStatus
+            status={status}
+            result={uploadResult?.text !== undefined ? uploadResult.text : uploadResult?.error}
+            fileUrl={uploadResult?.fileUrl}
+            mimeType={uploadResult?.mimeType}
+            fileName={uploadResult?.fileName}
+            onRetry={handleRetry}
+            showDetails={true}
+          />
 
-        {renderHelpLink()}
-      </View>
-    </ScrollView>
+          {renderHelpLink()}
+        </View>
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+  },
+  scrollView: {
+    flex: 1,
   },
   header: {
-    padding: 20,
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 0,
+    ...Platform.select({
+      ios: {
+        shadowOffset: { width: 0, height: 1 },
+        shadowRadius: 2,
+        marginBottom: 0,
+      },
+      android: {
+        elevation: 2,
+        marginBottom: 4,
+      },
+    }),
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginVertical: 8,
-    textAlign: "center",
-    color: "#1a1a1a",
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 12,
+  icon: {
+    marginRight: 8,
+  },
+  headerTitle: {
+    fontWeight: '700',
+  },
+  headerSubtitle: {
+    marginBottom: 8,
   },
   mainSection: {
     padding: 20,
   },
   explanationCard: {
-    backgroundColor: "#f8f9fa",
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
@@ -385,44 +418,55 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   uploadButtons: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: 12,
-    marginBottom: 20,
+    flexDirection: "column",
+    marginBottom: 24,
   },
-  uploadButton: {
-    width: "31%",
-    backgroundColor: "#fff",
+  uploadButtonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  uploadButtonWrapper: {
+    width: "48%",
+    minHeight: 140,
     borderRadius: 16,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  uploadButtonGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
     borderWidth: 1,
-    borderColor: "#e1e1e1",
-    padding: 12,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 3.84,
-    elevation: 2,
+    borderColor: '#000',
+    borderRadius: 16,
   },
   uploadButtonContent: {
+    flex: 1,
+    position: 'relative',
     alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+    backgroundColor: 'transparent',
+    margin: 2,
+    borderRadius: 14,
+    height: '100%',
   },
   uploadButtonDisabled: {
     opacity: 0.5,
   },
   uploadButtonText: {
     marginTop: 8,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
     color: "#1a1a1a",
     textAlign: "center",
   },
   uploadButtonSubtext: {
     marginTop: 4,
-    fontSize: 12,
+    fontSize: 13,
     color: "#666",
     textAlign: "center",
   },

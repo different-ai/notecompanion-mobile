@@ -72,7 +72,7 @@ export const TextDocumentViewer: React.FC<TextDocumentViewerProps> = ({
         <MaterialIcons
           name={isExpanded ? 'expand-less' : 'expand-more'}
           size={24}
-          color="#007AFF"
+          color="rgb(159, 122, 234)"
         />
         <Text style={styles.expandButtonText}>
           {isExpanded ? 'Show less' : 'Show more'}
@@ -84,29 +84,18 @@ export const TextDocumentViewer: React.FC<TextDocumentViewerProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgb(255, 250, 240)',
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#e1e1e1',
+    borderColor: 'rgba(0,0,0,0.08)',
     margin: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
   },
   header: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e1e1e1',
-    backgroundColor: '#f8f9fa',
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: 'rgb(255, 250, 240)',
   },
   title: {
     fontSize: 20,
@@ -120,7 +109,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   contentContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgb(255, 250, 240)',
   },
   contentWrapper: {
     padding: 16,
@@ -131,13 +120,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e1e1e1',
-    backgroundColor: '#f8f9fa',
+    borderTopColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: 'rgb(255, 250, 240)',
   },
   expandButtonText: {
     marginLeft: 8,
     fontSize: 14,
-    color: '#007AFF',
+    color: 'rgb(159, 122, 234)',
     fontWeight: '500',
   },
 });
@@ -181,24 +170,24 @@ const markdownStyles = {
   listUnorderedItemIcon: {
     fontSize: 16,
     lineHeight: 24,
-    color: '#007AFF',
+    color: 'rgb(159, 122, 234)',
     marginRight: 8,
   },
   link: {
-    color: '#007AFF',
+    color: 'rgb(159, 122, 234)',
     textDecorationLine: 'underline' as const,
   },
   blockquote: {
     borderLeftWidth: 4,
-    borderLeftColor: '#007AFF',
+    borderLeftColor: 'rgb(159, 122, 234)',
     paddingLeft: 16,
     marginVertical: 12,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgba(159, 122, 234, 0.05)',
     paddingVertical: 8,
   },
   code_inline: {
     fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace' }),
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgba(159, 122, 234, 0.05)',
     paddingHorizontal: 4,
     paddingVertical: 2,
     borderRadius: 4,
@@ -206,7 +195,7 @@ const markdownStyles = {
   },
   code_block: {
     fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace' }),
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgba(159, 122, 234, 0.05)',
     padding: 12,
     borderRadius: 8,
     marginVertical: 8,
@@ -214,7 +203,7 @@ const markdownStyles = {
   },
   fence: {
     fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace' }),
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgba(159, 122, 234, 0.05)',
     padding: 12,
     borderRadius: 8,
     marginVertical: 8,
@@ -222,23 +211,23 @@ const markdownStyles = {
   },
   table: {
     borderWidth: 1,
-    borderColor: '#e1e1e1',
+    borderColor: 'rgba(0,0,0,0.08)',
     borderRadius: 8,
     marginVertical: 12,
   },
   thead: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgba(159, 122, 234, 0.05)',
   },
   th: {
     padding: 12,
     borderBottomWidth: 1,
     borderRightWidth: 1,
-    borderColor: '#e1e1e1',
+    borderColor: 'rgba(0,0,0,0.08)',
   },
   td: {
     padding: 12,
     borderBottomWidth: 1,
     borderRightWidth: 1,
-    borderColor: '#e1e1e1',
+    borderColor: 'rgba(0,0,0,0.08)',
   },
 }; 

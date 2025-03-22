@@ -77,7 +77,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
           />
           {loading && (
             <View style={[styles.loadingOverlay, { width: previewWidth, height: previewHeight }]}>
-              <ActivityIndicator size="large" color="#007AFF" />
+              <ActivityIndicator size="large" color="rgb(159, 122, 234)" />
               <Text style={styles.loadingText}>Loading PDF...</Text>
             </View>
           )}
@@ -100,7 +100,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
           />
           {loading && (
             <View style={[styles.loadingOverlay, { width: previewWidth, height: previewHeight }]}>
-              <ActivityIndicator size="large" color="#007AFF" />
+              <ActivityIndicator size="large" color="rgb(159, 122, 234)" />
               <Text style={styles.loadingText}>Loading image...</Text>
             </View>
           )}
@@ -121,7 +121,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
       // Generic file preview
       return (
         <View style={styles.genericContainer}>
-          <MaterialIcons name="insert-drive-file" size={64} color="#007AFF" />
+          <MaterialIcons name="insert-drive-file" size={64} color="rgb(159, 122, 234)" />
           <Text style={styles.fileNameText} numberOfLines={2}>
             {fileName || 'File preview not available'}
           </Text>
@@ -153,7 +153,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
                   : "insert-drive-file"
               } 
               size={24} 
-              color="#007AFF" 
+              color="rgb(159, 122, 234)" 
             />
             <Text style={styles.previewHeaderText}>
               {isPdf ? 'PDF Preview' 
@@ -172,7 +172,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgb(251, 244, 234)',
   },
   contentContainer: {
     padding: 20,
@@ -193,31 +193,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#e1e1e1',
-    backgroundColor: '#f8f9fa',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
+    borderColor: 'rgba(0,0,0,0.08)',
+    backgroundColor: 'rgb(255, 250, 240)',
   },
   pdfView: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgb(255, 250, 240)',
   },
   imagePreview: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgb(255, 250, 240)',
   },
   loadingOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
-    backgroundColor: 'rgba(248, 249, 250, 0.8)',
+    backgroundColor: 'rgba(251, 244, 234, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -229,13 +218,13 @@ const styles = StyleSheet.create({
   genericContainer: {
     width: width - 40,
     height: (width - 40) * 1.4,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgb(255, 250, 240)',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
     borderWidth: 1,
-    borderColor: '#e1e1e1',
+    borderColor: 'rgba(0,0,0,0.08)',
   },
   fileNameText: {
     fontSize: 16,

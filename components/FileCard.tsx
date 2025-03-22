@@ -1,9 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Share, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Share, Alert, Image, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { UploadedFile } from '@/utils/api';
 import * as FileSystem from 'expo-file-system';
 import { useRouter } from 'expo-router';
+import { useSemanticColor } from '@/hooks/useThemeColor';
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import * as Haptics from 'expo-haptics';
 
 // Content moderation check for displaying files
 const runContentModeration = async (text: string | undefined): Promise<{
@@ -34,7 +38,9 @@ const runContentModeration = async (text: string | undefined): Promise<{
 };
 
 interface FileCardProps {
-  file: UploadedFile;
+  file: UploadedFile & {
+    featured?: boolean; // Optional flag to mark a file as featured
+  };
   onDelete: (id: number) => void;
   onView: (file: UploadedFile) => void;
 }
@@ -45,6 +51,17 @@ export function FileCard({ file, onDelete, onView }: FileCardProps) {
     isAppropriate: boolean;
     contentFlags?: string[];
   }>({ isAppropriate: true });
+  
+  // Get colors from our semantic theme system
+  const primaryColor = useSemanticColor('primary');
+  const successColor = useSemanticColor('success');
+  const dangerColor = useSemanticColor('danger');
+  const textColor = useSemanticColor('text');
+  const textSecondaryColor = useSemanticColor('textSecondary');
+  const warningColor = useSemanticColor('warning');
+  const backgroundColor = useSemanticColor('background');
+  const cardColor = useSemanticColor('card');
+  const borderColor = useSemanticColor('border');
   
   React.useEffect(() => {
     // Run content moderation check
@@ -96,6 +113,11 @@ export function FileCard({ file, onDelete, onView }: FileCardProps) {
       if (!file.processed) {
         Alert.alert('Note Not Ready', 'Please wait until processing is complete before sharing.');
         return;
+      }
+      
+      // Add haptic feedback on iOS
+      if (Platform.OS === 'ios') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       }
       
       // Determine if we have content to share
@@ -152,6 +174,11 @@ export function FileCard({ file, onDelete, onView }: FileCardProps) {
       return;
     }
 
+    // Add haptic feedback on iOS
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
     // Navigate to the file viewer screen
     router.push({
       pathname: '/file-viewer',
@@ -164,167 +191,272 @@ export function FileCard({ file, onDelete, onView }: FileCardProps) {
     });
   };
 
+  const handleDelete = () => {
+    // Add haptic feedback on iOS for destructive actions
+    if (Platform.OS === 'ios') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    }
+    
+    // Show a confirmation dialog
+    Alert.alert(
+      'Delete Note',
+      'Are you sure you want to delete this note?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => onDelete(file.id),
+        },
+      ]
+    );
+  };
+
   return (
-    <View style={styles.card}>
-      <View style={styles.fileHeader}>
-        <View style={styles.fileIcon}>
-          <MaterialIcons
-            name={getFileIcon(file.mimeType)}
-            size={24}
-            color="#007AFF"
-          />
-        </View>
-        <View style={styles.fileInfo}>
-          <Text style={styles.fileName} numberOfLines={1}>
-            {file.name}
-          </Text>
-          <Text style={styles.fileDate}>{formatDate(file.createdAt)}</Text>
-        </View>
-      </View>
+    <View style={styles.cardWrapper}>
+      {/* Gradient border overlay */}
+      <View style={styles.gradientBorder} />
       
-      {file.extractedText && !moderation.isAppropriate ? (
-        <View style={styles.contentFilteredContainer}>
-          <MaterialIcons name="warning" size={18} color="#f59e0b" />
-          <Text style={styles.contentFilteredText}>
-            Content flagged for review
-          </Text>
-        </View>
-      ) : (
-        <View style={styles.previewContainer}>
-          {file.mimeType?.includes('image') && file.blobUrl ? (
-            <Image
-              source={{ uri: file.blobUrl }}
-              style={styles.imagePreview}
-              resizeMode="cover"
-            />
-          ) : file.mimeType?.includes('pdf') && file.blobUrl ? (
-            <View style={styles.pdfPreviewContainer}>
-              <MaterialIcons name="picture-as-pdf" size={48} color="#007AFF" />
-              <Text style={styles.pdfPreviewText}>PDF Document</Text>
-            </View>
-          ) : file.extractedText ? (
-            <Text style={styles.previewText} numberOfLines={2}>
-              {getContentPreview()}
-            </Text>
-          ) : (
-            <View style={styles.noPreviewContainer}>
-              <MaterialIcons name="insert-drive-file" size={48} color="#8E8E93" />
-              <Text style={styles.noPreviewText}>No preview available</Text>
-            </View>
-          )}
-        </View>
-      )}
-
-      <View style={styles.statusBar}>
-        <View
-          style={[
-            styles.statusIndicator,
-            file.processed ? styles.statusSuccess : styles.statusPending,
-          ]}
-        />
-        <Text style={styles.statusText}>
-          {file.processed ? 'Ready to view' : 'Processing...'}
-        </Text>
-      </View>
-
-      <View style={styles.actionButtons}>
-        <TouchableOpacity
-          style={styles.viewButton}
-          onPress={handleView}
-          disabled={!file.processed}
-        >
-          <MaterialIcons name="visibility" size={20} color={file.processed ? "#007AFF" : "#AAAAAA"} />
-          <Text style={[styles.viewButtonText, !file.processed && styles.disabledText]}>View</Text>
-        </TouchableOpacity>
+      {/* Card content */}
+      <ThemedView 
+        variant="card" 
+        style={styles.card}
+      >
+        {/* Popular ribbon - can be conditionally rendered */}
+        {file.featured && (
+          <View style={styles.ribbon}>
+            <ThemedText style={styles.ribbonText} colorName="background">Most Popular</ThemedText>
+          </View>
+        )}
         
-        <TouchableOpacity
-          style={styles.shareButton}
-          onPress={handleShare}
-          disabled={!file.processed}
-        >
-          <MaterialIcons 
-            name="share" 
-            size={20} 
-            color={file.processed ? "#4CAF50" : "#AAAAAA"} 
-          />
-          <Text style={[styles.shareButtonText, !file.processed && styles.disabledText]}>Share</Text>
-        </TouchableOpacity>
+        <View style={styles.fileHeader}>
+          <View style={styles.titleContainer}>
+            <View style={[styles.fileIcon, { backgroundColor: Platform.OS === 'ios' ? 'rgba(159, 122, 234, 0.15)' : 'rgba(159, 122, 234, 0.1)' }]}>
+              <MaterialIcons
+                name={getFileIcon(file.mimeType)}
+                size={24}
+                color="rgb(159, 122, 234)"
+              />
+            </View>
+            <View style={styles.fileInfo}>
+              <ThemedText weight="semibold" style={styles.fileName} numberOfLines={1}>
+                {file.name}
+              </ThemedText>
+              <ThemedText colorName="textSecondary" type="caption" style={styles.fileDate}>
+                {formatDate(file.createdAt)}
+              </ThemedText>
+            </View>
+          </View>
+          
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={handleShare}
+              disabled={!file.processed}
+            >
+              <MaterialIcons 
+                name="share" 
+                size={22} 
+                color={file.processed ? "#68D391" : "#AAAAAA"} 
+              />
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={handleDelete}
+            >
+              <MaterialIcons name="delete-outline" size={22} color="#FC8181" />
+            </TouchableOpacity>
+          </View>
+        </View>
         
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => onDelete(file.id)}
-        >
-          <MaterialIcons name="delete-outline" size={20} color="#FF3B30" />
-          <Text style={styles.deleteButtonText}>Delete</Text>
-        </TouchableOpacity>
-      </View>
+        {file.extractedText && !moderation.isAppropriate ? (
+          <ThemedView 
+            style={styles.contentFilteredContainer} 
+            colorName="warning"
+          >
+            <MaterialIcons name="warning" size={18} color={Platform.OS === 'ios' ? '#f59e0b' : '#F6E05E'} />
+            <ThemedText style={styles.contentFilteredText}>
+              Content flagged for review
+            </ThemedText>
+          </ThemedView>
+        ) : (
+          <View style={styles.previewContainer}>
+            {file.mimeType?.includes('image') && file.blobUrl ? (
+              <Image
+                source={{ uri: file.blobUrl }}
+                style={styles.imagePreview}
+                resizeMode="cover"
+              />
+            ) : file.mimeType?.includes('pdf') && file.blobUrl ? (
+              <View style={styles.pdfPreviewContainer}>
+                <MaterialIcons name="picture-as-pdf" size={48} color={primaryColor} />
+                <ThemedText colorName="textSecondary" style={styles.pdfPreviewText}>PDF Document</ThemedText>
+              </View>
+            ) : file.extractedText ? (
+              <ThemedText colorName="textSecondary" style={styles.previewText} numberOfLines={2}>
+                {getContentPreview()}
+              </ThemedText>
+            ) : (
+              <View style={styles.noPreviewContainer}>
+                <MaterialIcons name="insert-drive-file" size={48} color={textSecondaryColor} />
+                <ThemedText colorName="textSecondary" style={styles.noPreviewText}>No preview available</ThemedText>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* File features/benefits section */}
+        <View style={styles.featuresContainer}>
+          <View style={styles.featureItem}>
+            <MaterialIcons name="check" size={18} color="rgb(159, 122, 234)" />
+            <ThemedText colorName="textSecondary" style={styles.featureText}>
+              {file.extractedText ? `${Math.ceil(file.extractedText.length / 100)} words` : 'No content'}
+            </ThemedText>
+          </View>
+          
+          <View style={styles.featureItem}>
+            <MaterialIcons name="check" size={18} color="rgb(159, 122, 234)" />
+            <ThemedText colorName="textSecondary" style={styles.featureText}>
+              {file.mimeType?.includes('pdf') ? 'PDF Format' : file.mimeType?.includes('image') ? 'Image Format' : 'Text Format'}
+            </ThemedText>
+          </View>
+          
+          <View style={styles.featureItem}>
+            <MaterialIcons name="check" size={18} color="rgb(159, 122, 234)" />
+            <ThemedText colorName="textSecondary" style={styles.featureText}>
+              {file.processed ? 'Ready to use' : 'Processing...'}
+            </ThemedText>
+          </View>
+        </View>
+
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={[styles.mainActionButton, !file.processed && styles.disabledButton]}
+            onPress={handleView}
+            disabled={!file.processed}
+          >
+            <ThemedText style={styles.mainActionButtonText} colorName="background">
+              View Note
+            </ThemedText>
+            <MaterialIcons name="arrow-right" size={18} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </ThemedView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  cardWrapper: {
+    position: 'relative',
+    marginBottom: 24,
+    marginHorizontal: 2, // Allow space for the border effect to be visible
+  },
+  gradientBorder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: 'rgba(159, 122, 234, 0.2)', // Primary color with low opacity
+    backgroundColor: 'transparent',
+    zIndex: 1,
+  },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 16, 
+    padding: 20,
+    marginBottom: 0,
     borderWidth: 1,
-    borderColor: '#e1e1e1',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 3.84,
-    elevation: 2,
+    borderColor: 'black',
+    zIndex: 2,
+    overflow: 'hidden', // For the ribbon positioning
+  },
+  ribbon: {
+    position: 'absolute',
+    top: -14,
+    left: '50%',
+    transform: [{ translateX: -48 }],
+    backgroundColor: 'rgb(159, 122, 234)', // Hard-coded primary color
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    zIndex: 10,
+  },
+  ribbonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
   contentFilteredContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff8e6',
     padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
+    borderRadius: 10,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'black',
+    opacity: 0.9,
   },
   contentFilteredText: {
     marginLeft: 8,
     fontSize: 14,
-    color: '#92400e',
   },
   fileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    paddingTop: 8, // Extra space at top for ribbon if needed
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   fileIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: '#F0F0F0',
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   fileInfo: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 14,
   },
   fileName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-    color: '#1a1a1a',
   },
   fileDate: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: 13,
     marginTop: 4,
   },
   previewContainer: {
-    height: 120,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
+    height: 140,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'black',
     overflow: 'hidden',
-    marginVertical: 12,
+    marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        backgroundColor: 'rgba(0,0,0,0.03)',
+      },
+      android: {
+        backgroundColor: '#f8f9fa',
+      },
+    }),
   },
   imagePreview: {
     width: '100%',
@@ -334,12 +466,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
   },
   pdfPreviewText: {
     marginTop: 8,
     fontSize: 14,
-    color: '#666',
   },
   noPreviewContainer: {
     flex: 1,
@@ -349,12 +479,53 @@ const styles = StyleSheet.create({
   noPreviewText: {
     marginTop: 8,
     fontSize: 14,
-    color: '#8E8E93',
   },
   previewText: {
-    fontSize: 14,
-    color: '#555',
+    fontSize: 15,
+    padding: 12,
     fontStyle: 'italic',
+  },
+  featuresContainer: {
+    marginBottom: 20,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
+  featureText: {
+    marginLeft: 10,
+    fontSize: 14,
+    flex: 1,
+  },
+  actionButtons: {
+    marginTop: 8,
+  },
+  mainActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgb(159, 122, 234)', // Hard-coded primary color
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 14,
+  },
+  mainActionButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 16,
+    marginRight: 8,
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  iconButton: {
+    padding: 10,
+    marginLeft: 12,
+  },
+  disabledText: {
+    opacity: 0.5,
   },
   statusBar: {
     flexDirection: 'row',
@@ -367,57 +538,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginRight: 6,
   },
-  statusSuccess: {
-    backgroundColor: '#34C759',
-  },
-  statusPending: {
-    backgroundColor: '#FF9500',
-  },
   statusText: {
     fontSize: 13,
-    color: '#666',
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 8,
-  },
-  viewButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 8,
-    marginRight: 12,
-  },
-  viewButtonText: {
-    color: '#007AFF',
-    marginLeft: 4,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  disabledText: {
-    color: '#AAAAAA',
-  },
-  shareButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 8,
-    marginRight: 12,
-  },
-  shareButtonText: {
-    color: '#4CAF50',
-    marginLeft: 4,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  deleteButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 8,
-  },
-  deleteButtonText: {
-    color: '#FF3B30',
-    marginLeft: 4,
-    fontSize: 14,
-    fontWeight: '500',
   },
 });

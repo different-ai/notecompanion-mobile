@@ -5,8 +5,13 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import { useSemanticColor } from '@/hooks/useThemeColor';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface IntegrationOption {
   id: string;
@@ -48,12 +53,25 @@ const integrations: IntegrationOption[] = [
 ];
 
 export default function SyncScreen() {
+  const primaryColor = useSemanticColor('primary');
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.wrapper}>
+    <ThemedView style={styles.wrapper}>
+      <ThemedView variant="elevated" style={[styles.header, { paddingTop: Math.max(20, insets.top) }]}>
+        <View style={styles.titleContainer}>
+          <MaterialIcons name="sync" size={28} color={primaryColor} style={styles.icon} />
+          <ThemedText type="heading" style={styles.headerTitle}>Synced Notes</ThemedText>
+        </View>
+        <ThemedText colorName="textSecondary" type="label" style={styles.headerSubtitle}>
+          Connect with your favorite services
+        </ThemedText>
+      </ThemedView>
+
       <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
         <View style={styles.mainSection}>
           <View style={styles.explanationCard}>
-            <MaterialIcons name="update" size={24} color="#007AFF" />
+            <MaterialIcons name="update" size={24} color={primaryColor} />
             <Text style={styles.explanationTitle}>Seamless Integration</Text>
             <Text style={styles.explanationText}>
               We're working on integrations with your favorite services to make your file organization experience even better.
@@ -64,7 +82,7 @@ export default function SyncScreen() {
             {integrations.map((integration) => (
               <View key={integration.id} style={styles.integrationCard}>
                 <View style={styles.integrationHeader}>
-                  <MaterialIcons name={integration.icon as any} size={32} color="#007AFF" />
+                  <MaterialIcons name={integration.icon as any} size={32} color={primaryColor} />
                   <View style={styles.integrationTitleContainer}>
                     <Text style={styles.integrationTitle}>{integration.name}</Text>
                     {integration.comingSoon ? (
@@ -96,7 +114,7 @@ export default function SyncScreen() {
           </View>
 
           <View style={styles.notificationCard}>
-            <MaterialIcons name="notifications-active" size={24} color="#007AFF" />
+            <MaterialIcons name="notifications-active" size={24} color={primaryColor} />
             <Text style={styles.notificationTitle}>Stay Updated</Text>
             <Text style={styles.notificationText}>
               We'll notify you as soon as these integrations become available.
@@ -107,14 +125,42 @@ export default function SyncScreen() {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
-    backgroundColor: '#fff',
+  },
+  header: {
+    padding: 16,
+    borderRadius: 0,
+    ...Platform.select({
+      ios: {
+        shadowOffset: { width: 0, height: 1 },
+        shadowRadius: 2,
+        marginBottom: 0,
+      },
+      android: {
+        elevation: 2,
+        marginBottom: 4,
+      },
+    }),
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  icon: {
+    marginRight: 8,
+  },
+  headerTitle: {
+    fontWeight: '700',
+  },
+  headerSubtitle: {
+    marginBottom: 8,
   },
   container: {
     flex: 1,

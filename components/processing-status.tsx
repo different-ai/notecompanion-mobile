@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { UploadStatus } from '@/utils/file-handler';
 import { FilePreview } from './file-preview';
 import { TextDocumentViewer } from './text-document-viewer';
+import { useRouter } from 'expo-router';
 
 interface ProcessingStatusProps {
   status: UploadStatus;
@@ -26,6 +27,7 @@ export const ProcessingStatus: React.FC<ProcessingStatusProps> = ({
   onBackToHome,
   showDetails = true,
 }) => {
+  const router = useRouter();
   if (status === 'idle') {
     return null;
   }
@@ -87,14 +89,28 @@ export const ProcessingStatus: React.FC<ProcessingStatusProps> = ({
               It will be automatically synced to any services you have enabled.
             </Text>
           )}
-          {onBackToHome && (
+          
+          {/* View All Notes button */}
+          <View style={styles.buttonContainer}>
             <TouchableOpacity
-              style={styles.button}
-              onPress={onBackToHome}
+              style={[styles.button, styles.viewNotesButton]}
+              onPress={() => router.push('/notes')}
             >
-              <Text style={styles.buttonText}>Back to Home</Text>
+              <View style={styles.buttonContent}>
+                <MaterialIcons name="folder" size={18} color="#fff" />
+                <Text style={styles.buttonText}>View All Notes</Text>
+              </View>
             </TouchableOpacity>
-          )}
+            
+            {onBackToHome && (
+              <TouchableOpacity
+                style={[styles.button, styles.secondaryButton]}
+                onPress={onBackToHome}
+              >
+                <Text style={styles.buttonText}>Back to Home</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       )}
 
@@ -139,18 +155,12 @@ const styles = StyleSheet.create({
   },
   statusContainer: {
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgb(255, 250, 240)',
     padding: 20,
     borderRadius: 16,
     width: '100%',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.08)',
   },
   statusText: {
     marginTop: 12,
@@ -167,19 +177,11 @@ const styles = StyleSheet.create({
   resultContainer: {
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: 'rgba(104, 211, 145, 0.1)', // Light green with low opacity
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#A5D6A7',
+    borderColor: 'rgba(104, 211, 145, 0.4)', // Success color with lower opacity
     width: '100%',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
   resultHeader: {
     flexDirection: 'row',
@@ -197,19 +199,11 @@ const styles = StyleSheet.create({
   errorContainer: {
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#FFEBEE',
+    backgroundColor: 'rgba(252, 129, 129, 0.1)', // Light red with low opacity
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#FFCDD2',
+    borderColor: 'rgba(252, 129, 129, 0.4)', // Danger color with lower opacity
     width: '100%',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
   successText: {
     fontSize: 16,
@@ -237,13 +231,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
     marginTop: 16,
+    width: '100%',
   },
   button: {
     backgroundColor: '#007AFF',
     padding: 12,
     borderRadius: 8,
-    minWidth: 100,
+    minWidth: 140,
     alignItems: 'center',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  viewNotesButton: {
+    backgroundColor: '#34C759', // Green button for "View All Notes"
   },
   secondaryButton: {
     backgroundColor: '#8E8E93',

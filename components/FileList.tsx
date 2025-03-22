@@ -184,7 +184,6 @@ export function FileList({ pageSize = 10 }: FileListProps) {
       onEndReachedThreshold={0.5}
       ListHeaderComponent={() => (
         <View style={styles.headerContainer}>
-          <Text style={styles.headerTitle}>Synced Notes</Text>
           <Text style={styles.headerSubtitle}>
             {pagination ? `${pagination.total} notes found` : ''}
           </Text>

@@ -352,11 +352,11 @@ export default function FileViewerScreen() {
           style={[
             styles.header,
             theme === 'dark' && styles.darkHeader,
-            { paddingTop: Math.max(16, insets.top) }
+            { paddingTop: insets.top > 0 ? 8 : 16 }
           ]}
         >
           <TouchableOpacity 
-            style={[styles.headerButton, { marginTop: Platform.OS === 'ios' ? 8 : 0 }]} 
+            style={styles.headerButton} 
             onPress={handleBack}
           >
             <MaterialIcons name="arrow-back" size={24} color={theme === 'dark' ? '#fff' : '#000'} />
@@ -365,8 +365,7 @@ export default function FileViewerScreen() {
             <Text 
               style={[
                 styles.headerTitle, 
-                theme === 'dark' && styles.darkText,
-                { marginTop: Platform.OS === 'ios' ? 8 : 0 }
+                theme === 'dark' && styles.darkText
               ]}
               numberOfLines={1}
             >
@@ -374,7 +373,7 @@ export default function FileViewerScreen() {
             </Text>
           </View>
           <TouchableOpacity 
-            style={[styles.headerButton, { marginTop: Platform.OS === 'ios' ? 8 : 0 }]} 
+            style={styles.headerButton} 
             onPress={handleShare}
           >
             <MaterialIcons name="share" size={24} color={theme === 'dark' ? '#fff' : '#000'} />
@@ -485,12 +484,13 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'flex-end', // Align items to bottom of header
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#e1e1e1',
     backgroundColor: '#fff',
+    height: 52,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -509,6 +509,7 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     padding: 8,
+    zIndex: 10,
   },
   headerTitleContainer: {
     flex: 1,
