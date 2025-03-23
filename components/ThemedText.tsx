@@ -4,6 +4,10 @@ import { useSemanticColor, useThemeColor, ThemeColorName } from '@/hooks/useThem
 export type FontWeight = 'regular' | 'medium' | 'semibold' | 'bold';
 export type FontSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
 
+/**
+ * App-wide themed text component that handles color schemes, typography, and styling
+ * This component automatically adapts to iOS/Android platform conventions
+ */
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;

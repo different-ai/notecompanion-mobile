@@ -1,4 +1,5 @@
-import { View, StyleSheet, Alert, Platform, ScrollView, Linking } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Alert, Platform, ScrollView, Linking, ActivityIndicator } from 'react-native';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { Button } from '../../components/Button';
 import { ThemedView } from '../../components/ThemedView';
@@ -7,6 +8,7 @@ import { SubscriptionCard } from '../../components/SubscriptionCard';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSemanticColor } from '@/hooks/useThemeColor';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { API_URL } from '@/constants/config';
 
 export default function SettingsScreen() {
   const { signOut } = useAuth();
@@ -102,7 +104,21 @@ export default function SettingsScreen() {
           </ThemedView>
         </View>
 
-       
+        {/* Subscription Section */}
+        <View style={styles.section}>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>Subscription</ThemedText>
+          
+          <SubscriptionStatus />
+
+          <Button
+            onPress={() => Linking.openURL('https://app.notecompanion.ai/dashboard/pricing')}
+            variant="primary"
+            style={styles.subscriptionButton}
+            leftIcon={<MaterialIcons name="star" size={20} color="#fff" />}
+          >
+            Upgrade Your Plan
+          </Button>
+        </View>
         
         {/* Bottom buttons */}
         <View style={styles.bottomActions}>
@@ -132,6 +148,135 @@ export default function SettingsScreen() {
           </ThemedView>
         </View>
       </ScrollView>
+    </ThemedView>
+  );
+}
+
+// Create the SubscriptionStatus component
+function SubscriptionStatus() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [usageData, setUsageData] = useState<{
+    tokenUsage: number;
+    maxTokenUsage: number;
+    subscriptionStatus: string;
+    currentPlan: string;
+  } | null>(null);
+  const { getToken } = useAuth();
+  const backgroundColor = useSemanticColor('background');
+  const primaryColor = useSemanticColor('primary');
+
+  useEffect(() => {
+    async function fetchSubscriptionData() {
+      try {
+        const token = await getToken();
+        if (!token) {
+          setError("Authentication required");
+          setLoading(false);
+          return;
+        }
+
+        const response = await fetch(`${API_URL}/api/usage`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error fetching subscription data: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setUsageData(data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching subscription info:", err);
+        setError("Could not load subscription information");
+        setLoading(false);
+      }
+    }
+
+    fetchSubscriptionData();
+  }, []);
+
+  if (loading) {
+    return (
+      <ThemedView variant="elevated" style={styles.subscriptionCard}>
+        <ActivityIndicator size="small" color={primaryColor} />
+        <ThemedText style={{ marginTop: 8 }}>Loading subscription information...</ThemedText>
+      </ThemedView>
+    );
+  }
+
+  if (error) {
+    return (
+      <ThemedView variant="elevated" style={styles.subscriptionCard}>
+        <MaterialIcons name="error-outline" size={24} color="#E53E3E" />
+        <ThemedText style={{ marginTop: 8 }}>{error}</ThemedText>
+      </ThemedView>
+    );
+  }
+
+  // Format the plan name for display
+  const getPlanDisplay = (plan: string) => {
+    switch (plan?.toLowerCase()) {
+      case 'free':
+        return 'Free Plan';
+      case 'monthly':
+        return 'Monthly Subscription';
+      case 'yearly':
+        return 'Yearly Subscription';
+      case 'lifetime':
+        return 'Lifetime Access';
+      default:
+        return plan || 'Free Plan';
+    }
+  };
+
+  return (
+    <ThemedView variant="elevated" style={styles.subscriptionCard}>
+      <View style={styles.planInfo}>
+        <MaterialIcons 
+          name={usageData?.currentPlan === 'free' ? 'star-outline' : 'star'} 
+          size={24} 
+          color={usageData?.currentPlan === 'free' ? '#888' : primaryColor} 
+        />
+        <View style={styles.planDetails}>
+          <ThemedText type="defaultSemiBold">
+            {getPlanDisplay(usageData?.currentPlan || 'free')}
+          </ThemedText>
+          <ThemedText colorName="textSecondary" type="caption">
+            {usageData?.subscriptionStatus === 'active' ? 'Active Subscription' : 'Free Usage'}
+          </ThemedText>
+        </View>
+      </View>
+
+      {usageData && (
+        <View style={styles.usageInfo}>
+          <ThemedText type="caption" colorName="textSecondary">
+            Usage: {usageData.tokenUsage} / {usageData.maxTokenUsage} tokens
+          </ThemedText>
+          <View style={styles.usageBar}>
+            <View 
+              style={[
+                styles.usageProgress, 
+                { 
+                  width: `${Math.min(100, (usageData.tokenUsage / usageData.maxTokenUsage) * 100)}%`,
+                  backgroundColor: usageData.currentPlan === 'free' ? '#888' : primaryColor
+                }
+              ]} 
+            />
+          </View>
+        </View>
+      )}
+
+      <ThemedText style={styles.subscriptionNote}>
+        {usageData?.currentPlan === 'free' 
+          ? 'Upgrade to a paid plan for increased processing limits and premium features.'
+          : 'Manage your subscription at app.notecompanion.ai/dashboard'}
+      </ThemedText>
     </ThemedView>
   );
 }
@@ -191,6 +336,50 @@ const styles = StyleSheet.create({
   },
   userDetails: {
     marginLeft: 12,
+  },
+  // Subscription styles
+  subscriptionCard: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  planInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    alignSelf: 'flex-start',
+    width: '100%',
+  },
+  planDetails: {
+    marginLeft: 12,
+  },
+  usageInfo: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  usageBar: {
+    height: 6,
+    width: '100%',
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    borderRadius: 3,
+    marginTop: 8,
+    overflow: 'hidden',
+  },
+  usageProgress: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  subscriptionNote: {
+    fontSize: 14,
+    textAlign: 'center',
+    opacity: 0.8,
+    paddingHorizontal: 16,
+  },
+  subscriptionButton: {
+    marginTop: 16,
+    borderRadius: 12,
+    minHeight: 48,
   },
   signOutButton: {
     marginTop: 10,

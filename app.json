@@ -24,8 +24,8 @@
       "bundleIdentifier": "com.notecompanion.app",
       "infoPlist": {
         "NSCameraUsageDescription": "This app uses the camera to capture images of your notes for OCR processing.",
-        "NSPhotoLibraryUsageDescription": "This app accesses your photo library to let you import images for note processing.",
-        "NSPhotoLibraryAddUsageDescription": "This app can save processed notes to your photo library.",
+        "NSPhotoLibraryUsageDescription": "This app accesses your photo library to let you import images of your notes and documents for text extraction and OCR processing. For example, you can select photos of handwritten notes to convert them to digital text.",
+        "NSPhotoLibraryAddUsageDescription": "This app can save processed notes and extracted text to your photo library so you can access them later in your camera roll.",
         "NSMicrophoneUsageDescription": "This app may use the microphone for voice notes.",
         "LSApplicationQueriesSchemes": ["mailto", "message", "tel", "itms-apps"]
       }
@@ -62,8 +62,8 @@
       [
         "expo-media-library",
         {
-          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to import notes for processing.",
-          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save processed notes to your photo library.",
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to import images of your notes and documents for text extraction and OCR processing. For example, you can select photos of handwritten notes to convert them to digital text.",
+          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save processed notes and extracted text to your photo library so you can access them later in your camera roll.",
           "isAccessMediaLocationEnabled": true
         }
       ]
