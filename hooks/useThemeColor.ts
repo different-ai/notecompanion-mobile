@@ -20,7 +20,8 @@ export function useThemeColor(
   props: { light?: string; dark?: string },
   colorName: ThemeColorName
 ): string {
-  const theme = useColorScheme() ?? 'light';
+  // Always use light theme
+  const theme = 'light';
   const colorFromProps = props[theme];
 
   // Override with props if provided
@@ -37,7 +38,8 @@ export function useThemeColor(
  * Falls back to our custom theme colors on Android
  */
 export function useSemanticColor(colorName: ThemeColorName): string {
-  const theme = useColorScheme() ?? 'light';
+  // Always use light theme
+  const theme = 'light';
   
   // On iOS, we can use system colors for better Dynamic Island integration
   if (Platform.OS === 'ios') {
@@ -48,7 +50,7 @@ export function useSemanticColor(colorName: ThemeColorName): string {
       
       // Special case for tabBar which needs to be a regular color string for opacity
       if (colorName === 'tabBar') {
-        return theme === 'dark' ? 'rgba(29, 29, 31, 0.7)' : 'rgba(255, 255, 255, 0.9)';
+        return 'rgba(255, 255, 255, 0.9)';
       }
       
       return color;

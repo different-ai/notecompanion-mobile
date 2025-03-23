@@ -23,7 +23,8 @@ SplashScreen.preventAutoHideAsync();
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  // Always use light mode by setting colorScheme to 'light' instead of using useColorScheme()
+  const colorScheme = 'light';
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
@@ -325,7 +326,7 @@ export default function RootLayout() {
       {/* Import and use the AuthProvider from providers/auth.tsx instead of direct ClerkProvider */}
       <AuthProvider>
         <SafeAreaProvider>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <ThemeProvider value={DefaultTheme}>
             <Stack
               screenOptions={{
                 headerStyle: {
@@ -340,7 +341,7 @@ export default function RootLayout() {
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             </Stack>
-            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+            <StatusBar style="dark" />
           </ThemeProvider>
         </SafeAreaProvider>
       </AuthProvider>
