@@ -25,6 +25,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { useSemanticColor } from "@/hooks/useThemeColor";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { UsageStatus } from "@/components/usage-status";
 
 export default function HomeScreen() {
   const { getToken } = useAuth();
@@ -264,6 +265,12 @@ export default function HomeScreen() {
     </View>
   );
 
+  const renderUsageStatus = () => (
+    <View style={styles.usageStatusContainer}>
+      <UsageStatus compact={true} />
+    </View>
+  );
+
   const renderUploadButtons = () => (
     <View style={styles.uploadButtons}>
       <View style={styles.uploadButtonRow}>
@@ -339,6 +346,7 @@ export default function HomeScreen() {
       <ScrollView style={styles.scrollView}>
         <View style={styles.mainSection}>
           {renderExplanation()}
+          {renderUsageStatus()}
           {renderUploadButtons()}
           
           <ProcessingStatus
@@ -440,7 +448,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     borderWidth: 1,
-    borderColor: '#000',
+    borderColor: '#e5e5e5',
     borderRadius: 16,
   },
   uploadButtonContent: {
@@ -482,5 +490,8 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     marginLeft: 6,
     fontWeight: '500',
+  },
+  usageStatusContainer: {
+    marginBottom: 16,
   },
 });
