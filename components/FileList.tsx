@@ -184,9 +184,6 @@ export function FileList({ pageSize = 10 }: FileListProps) {
       onEndReachedThreshold={0.5}
       ListHeaderComponent={() => (
         <View style={styles.headerContainer}>
-          <Text style={styles.headerSubtitle}>
-            {pagination ? `${pagination.total} notes found` : ''}
-          </Text>
         </View>
       )}
       ListFooterComponent={() =>
@@ -208,7 +205,7 @@ export function FileList({ pageSize = 10 }: FileListProps) {
 
 const styles = StyleSheet.create({
   listContent: {
-    padding: 16,
+    padding: 8,
   },
   centerContainer: {
     flex: 1,
@@ -251,16 +248,18 @@ const styles = StyleSheet.create({
   },
   headerContainer: {
     marginBottom: 16,
+    paddingHorizontal: 4,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#000',
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 4,
+    color: '#333',
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#666',
-    marginTop: 4,
+    marginBottom: 8,
   },
   footerText: {
     textAlign: 'center',

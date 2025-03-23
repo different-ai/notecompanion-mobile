@@ -190,7 +190,7 @@ export default function FileViewerScreen() {
   const router = useRouter();
   const [fontSize, setFontSize] = useState(16);
   const [theme, setTheme] = useState<'light' | 'dark' | 'sepia'>('light');
-  const [viewMode, setViewMode] = useState<ViewMode>('document');
+  const [viewMode, setViewMode] = useState<ViewMode>('markdown');
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
 
@@ -373,37 +373,15 @@ export default function FileViewerScreen() {
             </Text>
           </View>
           <TouchableOpacity 
-            style={styles.headerButton} 
+            style={[styles.headerButton, styles.shareButton]} 
             onPress={handleShare}
           >
-            <MaterialIcons name="share" size={24} color={theme === 'dark' ? '#fff' : '#000'} />
+            <MaterialIcons name="share" size={24} color="#68D391" />
           </TouchableOpacity>
         </View>
 
         {/* View Mode Tabs */}
         <View style={[styles.tabContainer, theme === 'dark' && styles.darkTab]}>
-          <TouchableOpacity
-            style={[
-              styles.tab,
-              viewMode === 'document' && styles.activeTab,
-            ]}
-            onPress={() => setViewMode('document')}
-          >
-            <MaterialIcons
-              name="description"
-              size={20}
-              color={viewMode === 'document' ? '#007AFF' : theme === 'dark' ? '#999' : '#666'}
-            />
-            <Text
-              style={[
-                styles.tabText,
-                viewMode === 'document' && styles.activeTabText,
-                theme === 'dark' && styles.darkTabText,
-              ]}
-            >
-              Document
-            </Text>
-          </TouchableOpacity>
           <TouchableOpacity
             style={[
               styles.tab,
@@ -426,45 +404,65 @@ export default function FileViewerScreen() {
               Markdown
             </Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              viewMode === 'document' && styles.activeTab,
+            ]}
+            onPress={() => setViewMode('document')}
+          >
+            <MaterialIcons
+              name="description"
+              size={20}
+              color={viewMode === 'document' ? '#007AFF' : theme === 'dark' ? '#999' : '#666'}
+            />
+            <Text
+              style={[
+                styles.tabText,
+                viewMode === 'document' && styles.activeTabText,
+                theme === 'dark' && styles.darkTabText,
+              ]}
+            >
+              Document
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Content */}
         <View style={styles.contentContainer}>
           {viewMode === 'document' ? renderDocumentView() : renderMarkdownView()}
 
-          {/* Reading Options (only shown in markdown view) */}
-          {viewMode === 'markdown' && (
-            <View style={[
-              styles.controls, 
-              theme === 'dark' && styles.darkControls,
-              { paddingBottom: Math.max(16, insets.bottom) }
-            ]}>
-              <TouchableOpacity
-                style={styles.controlButton}
-                onPress={() => setFontSize(Math.max(12, fontSize - 2))}
-              >
-                <MaterialIcons name="text-fields" size={20} color="#007AFF" />
-                <Text style={styles.controlText}>A-</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.controlButton}
-                onPress={() => setFontSize(Math.min(24, fontSize + 2))}
-              >
-                <MaterialIcons name="text-fields" size={24} color="#007AFF" />
-                <Text style={styles.controlText}>A+</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.controlButton}
-                onPress={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-              >
-                <MaterialIcons
-                  name={theme === 'light' ? 'dark-mode' : 'light-mode'}
-                  size={24}
-                  color="#007AFF"
-                />
-              </TouchableOpacity>
-            </View>
-          )}
+          {/* Reading Controls */}
+          <View style={[
+            styles.controls, 
+            theme === 'dark' && styles.darkControls,
+            { paddingBottom: Math.max(16, insets.bottom) }
+          ]}>
+            <TouchableOpacity
+              style={styles.controlButton}
+              onPress={() => setFontSize(Math.max(12, fontSize - 2))}
+            >
+              <MaterialIcons name="text-fields" size={20} color="#007AFF" />
+              <Text style={styles.controlText}>A-</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.controlButton}
+              onPress={() => setFontSize(Math.min(24, fontSize + 2))}
+            >
+              <MaterialIcons name="text-fields" size={24} color="#007AFF" />
+              <Text style={styles.controlText}>A+</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.controlButton}
+              onPress={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+            >
+              <MaterialIcons
+                name={theme === 'light' ? 'dark-mode' : 'light-mode'}
+                size={24}
+                color="#007AFF"
+              />
+            </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     </>
@@ -490,7 +488,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e1e1e1',
     backgroundColor: '#fff',
-    height: 52,
+    height: 56,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -508,8 +506,15 @@ const styles = StyleSheet.create({
     borderBottomColor: '#333',
   },
   headerButton: {
-    padding: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
     zIndex: 10,
+  },
+  shareButton: {
+    backgroundColor: 'rgba(104, 211, 145, 0.15)',
   },
   headerTitleContainer: {
     flex: 1,
@@ -535,12 +540,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
+    padding: 14,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
   },
   activeTab: {
     borderBottomColor: '#007AFF',
+    backgroundColor: 'rgba(0, 122, 255, 0.05)',
   },
   darkTab: {
     backgroundColor: '#1a1a1a',
@@ -583,13 +589,17 @@ const styles = StyleSheet.create({
     borderTopColor: '#333',
   },
   controlButton: {
-    padding: 8,
+    padding: 10,
+    paddingHorizontal: 16,
+    borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
   },
   controlText: {
     marginLeft: 4,
     fontSize: 16,
+    fontWeight: '600',
     color: '#007AFF',
   },
 }); 

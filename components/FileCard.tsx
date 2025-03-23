@@ -99,7 +99,7 @@ export function FileCard({ file, onDelete, onView }: FileCardProps) {
   // Display a snippet of extracted text if available
   const getContentPreview = () => {
     if (file.extractedText) {
-      const preview = file.extractedText.substring(0, 100);
+      const preview = file.extractedText.substring(0, 200); // Increased for more content
       return preview.length < file.extractedText.length 
         ? `${preview}...` 
         : preview;
@@ -273,63 +273,88 @@ export function FileCard({ file, onDelete, onView }: FileCardProps) {
           </View>
         </View>
         
-        {file.extractedText && !moderation.isAppropriate ? (
-          <ThemedView 
-            style={styles.contentFilteredContainer} 
-            colorName="warning"
-          >
-            <MaterialIcons name="warning" size={18} color={Platform.OS === 'ios' ? '#f59e0b' : '#F6E05E'} />
-            <ThemedText style={styles.contentFilteredText}>
-              Content flagged for review
-            </ThemedText>
-          </ThemedView>
-        ) : (
-          <View style={styles.previewContainer}>
-            {file.mimeType?.includes('image') && file.blobUrl ? (
-              <Image
-                source={{ uri: file.blobUrl }}
-                style={styles.imagePreview}
-                resizeMode="cover"
-              />
-            ) : file.mimeType?.includes('pdf') && file.blobUrl ? (
-              <View style={styles.pdfPreviewContainer}>
-                <MaterialIcons name="picture-as-pdf" size={48} color={primaryColor} />
-                <ThemedText colorName="textSecondary" style={styles.pdfPreviewText}>PDF Document</ThemedText>
-              </View>
-            ) : file.extractedText ? (
-              <ThemedText colorName="textSecondary" style={styles.previewText} numberOfLines={2}>
-                {getContentPreview()}
+        {/* Content area with preview and metadata side by side */}
+        <View style={styles.contentContainer}>
+          {/* Preview container on the left */}
+          {file.extractedText && !moderation.isAppropriate ? (
+            <ThemedView 
+              style={styles.contentFilteredContainer} 
+              colorName="warning"
+            >
+              <MaterialIcons name="warning" size={18} color={Platform.OS === 'ios' ? '#f59e0b' : '#F6E05E'} />
+              <ThemedText style={styles.contentFilteredText}>
+                Content flagged for review
               </ThemedText>
+            </ThemedView>
+          ) : (
+            <View style={styles.previewContainer}>
+              {file.mimeType?.includes('image') && file.blobUrl ? (
+                <Image
+                  source={{ uri: file.blobUrl }}
+                  style={styles.imagePreview}
+                  resizeMode="cover"
+                />
+              ) : file.mimeType?.includes('pdf') && file.blobUrl ? (
+                <View style={styles.pdfPreviewContainer}>
+                  <MaterialIcons name="picture-as-pdf" size={48} color={primaryColor} />
+                  <ThemedText colorName="textSecondary" style={styles.pdfPreviewText}>PDF Document</ThemedText>
+                </View>
+              ) : file.extractedText ? (
+                <View style={styles.textPreviewContainer}>
+                  <ThemedText colorName="textSecondary" style={styles.previewText} numberOfLines={6}>
+                    {getContentPreview()}
+                  </ThemedText>
+                </View>
+              ) : (
+                <View style={styles.noPreviewContainer}>
+                  <MaterialIcons name="insert-drive-file" size={48} color={textSecondaryColor} />
+                  <ThemedText colorName="textSecondary" style={styles.noPreviewText}>No preview available</ThemedText>
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Metadata container on the right */}
+          <View style={styles.metadataContainer}>
+            {/* Status badge */}
+            {file.processed ? (
+              <View style={styles.statusBadge}>
+                <MaterialIcons name="check-circle" size={14} color="#fff" />
+                <ThemedText style={styles.statusBadgeText}>Ready</ThemedText>
+              </View>
             ) : (
-              <View style={styles.noPreviewContainer}>
-                <MaterialIcons name="insert-drive-file" size={48} color={textSecondaryColor} />
-                <ThemedText colorName="textSecondary" style={styles.noPreviewText}>No preview available</ThemedText>
+              <View style={[styles.statusBadge, styles.processingBadge]}>
+                <MaterialIcons name="pending" size={14} color="#fff" />
+                <ThemedText style={styles.statusBadgeText}>Processing</ThemedText>
               </View>
             )}
-          </View>
-        )}
-
-        {/* File features/benefits section */}
-        <View style={styles.featuresContainer}>
-          <View style={styles.featureItem}>
-            <MaterialIcons name="check" size={18} color="rgb(159, 122, 234)" />
-            <ThemedText colorName="textSecondary" style={styles.featureText}>
-              {file.extractedText ? `${Math.ceil(file.extractedText.length / 100)} words` : 'No content'}
-            </ThemedText>
-          </View>
-          
-          <View style={styles.featureItem}>
-            <MaterialIcons name="check" size={18} color="rgb(159, 122, 234)" />
-            <ThemedText colorName="textSecondary" style={styles.featureText}>
-              {file.mimeType?.includes('pdf') ? 'PDF Format' : file.mimeType?.includes('image') ? 'Image Format' : 'Text Format'}
-            </ThemedText>
-          </View>
-          
-          <View style={styles.featureItem}>
-            <MaterialIcons name="check" size={18} color="rgb(159, 122, 234)" />
-            <ThemedText colorName="textSecondary" style={styles.featureText}>
-              {file.processed ? 'Ready to use' : 'Processing...'}
-            </ThemedText>
+            
+            {/* File type */}
+            <View style={styles.metadataItem}>
+              <MaterialIcons name="insert-drive-file" size={16} color="rgb(159, 122, 234)" />
+              <ThemedText colorName="textSecondary" style={styles.metadataText}>
+                {file.mimeType?.includes('pdf') ? 'PDF' : 
+                file.mimeType?.includes('image') ? 'Image' : 'Text'}
+              </ThemedText>
+            </View>
+            
+            {/* Word count if text is available */}
+            {file.extractedText && (
+              <View style={styles.metadataItem}>
+                <MaterialIcons name="description" size={16} color="rgb(159, 122, 234)" />
+                <ThemedText colorName="textSecondary" style={styles.metadataText}>
+                  {`${Math.ceil(file.extractedText.length / 100)} words`}
+                </ThemedText>
+              </View>
+            )}
+            
+            {/* Creation date */}
+            <View style={styles.metadataItem}>
+              <MaterialIcons name="access-time" size={16} color="rgb(159, 122, 234)" />
+              <ThemedText colorName="textSecondary" style={styles.metadataText}>
+                {formatDate(file.createdAt).split(',')[0]}
+              </ThemedText>
+            </View>
           </View>
         </View>
 
@@ -354,7 +379,8 @@ const styles = StyleSheet.create({
   cardWrapper: {
     position: 'relative',
     marginBottom: 24,
-    marginHorizontal: 2, // Allow space for the border effect to be visible
+    marginHorizontal: 8,
+    padding: 2,
   },
   gradientBorder: {
     position: 'absolute',
@@ -363,8 +389,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     borderRadius: 20,
-    borderWidth: 2,
-    borderColor: 'rgba(159, 122, 234, 0.2)', // Primary color with low opacity
+    borderWidth: 0,
     backgroundColor: 'transparent',
     zIndex: 1,
   },
@@ -372,10 +397,21 @@ const styles = StyleSheet.create({
     borderRadius: 16, 
     padding: 20,
     marginBottom: 0,
-    borderWidth: 1,
-    borderColor: 'black',
+    backgroundColor: '#FFFFFF', // Explicit white background for paper-like look
+    borderWidth: 0,
     zIndex: 2,
     overflow: 'hidden', // For the ribbon positioning
+    ...Platform.select({
+      ios: {
+        shadowColor: 'rgba(0, 0, 0, 0.6)',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   ribbon: {
     position: 'absolute',
@@ -394,14 +430,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   contentFilteredContainer: {
+    flex: 3, // Match previewContainer's flex value
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
     borderRadius: 10,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'black',
+    borderWidth: 0,
+    backgroundColor: 'rgba(246, 224, 94, 0.1)',
     opacity: 0.9,
+    height: 160, // Match previewContainer's height
   },
   contentFilteredText: {
     marginLeft: 8,
@@ -443,29 +480,36 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   previewContainer: {
-    height: 140,
+    height: 160,
+    flex: 3, // Take 3/5 of the available width
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'black',
+    borderWidth: 0,
     overflow: 'hidden',
-    marginBottom: 16,
+    aspectRatio: 0.7,
     ...Platform.select({
       ios: {
-        backgroundColor: 'rgba(0,0,0,0.03)',
+        backgroundColor: 'rgba(0,0,0,0.02)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
       },
       android: {
         backgroundColor: '#f8f9fa',
+        elevation: 1,
       },
     }),
   },
   imagePreview: {
     width: '100%',
     height: '100%',
+    resizeMode: 'cover',
   },
   pdfPreviewContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 20,
   },
   pdfPreviewText: {
     marginTop: 8,
@@ -481,22 +525,53 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   previewText: {
-    fontSize: 15,
-    padding: 12,
-    fontStyle: 'italic',
-  },
-  featuresContainer: {
-    marginBottom: 20,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 10,
-  },
-  featureText: {
-    marginLeft: 10,
     fontSize: 14,
+    lineHeight: 20,
+    padding: 12,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  textPreviewContainer: {
     flex: 1,
+    width: '100%',
+    height: '100%',
+    padding: 8,
+    backgroundColor: '#FAFAFA',
+    borderLeftWidth: 1,
+    borderLeftColor: 'rgba(0,0,0,0.05)',
+  },
+  metadataContainer: {
+    flex: 2, // Take 2/5 of the available width
+    marginLeft: 12,
+    justifyContent: 'center',
+  },
+  statusBadge: {
+    backgroundColor: 'rgb(159, 122, 234)',
+    padding: 6,
+    borderRadius: 8,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+  },
+  statusBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  processingBadge: {
+    backgroundColor: '#F6E05E',
+  },
+  metadataItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  metadataText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#666',
   },
   actionButtons: {
     marginTop: 8,
@@ -540,5 +615,9 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 13,
+  },
+  contentContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
   },
 });

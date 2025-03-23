@@ -130,7 +130,6 @@ export function UsageStatus({ compact = false }: UsageStatusProps) {
           </View>
         </View>
       )}
-      {console.log(usageData)}
 
       {compact && usageData?.tier === 'free' && (
         <TouchableOpacity 

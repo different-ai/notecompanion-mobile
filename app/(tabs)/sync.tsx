@@ -78,6 +78,35 @@ export default function SyncScreen() {
             </Text>
           </View>
 
+          {/* Apple Notes integration card */}
+          <View style={styles.appleNotesCard}>
+            <View style={styles.appleNotesHeader}>
+              <MaterialIcons name="share" size={28} color={primaryColor} />
+              <Text style={styles.appleNotesTitle}>Sync with Apple Notes</Text>
+            </View>
+            <Text style={styles.appleNotesText}>
+              You can quickly add any of your notes to Apple Notes using the Share button in each note card.
+            </Text>
+            <View style={styles.appleNotesSteps}>
+              <View style={styles.stepRow}>
+                <View style={styles.stepBullet}><Text style={styles.stepNumber}>1</Text></View>
+                <Text style={styles.stepText}>Open any note from your list</Text>
+              </View>
+              <View style={styles.stepRow}>
+                <View style={styles.stepBullet}><Text style={styles.stepNumber}>2</Text></View>
+                <Text style={styles.stepText}>Tap the green Share button in the top right</Text>
+              </View>
+              <View style={styles.stepRow}>
+                <View style={styles.stepBullet}><Text style={styles.stepNumber}>3</Text></View>
+                <Text style={styles.stepText}>Select "Notes" from the share sheet</Text>
+              </View>
+              <View style={styles.stepRow}>
+                <View style={styles.stepBullet}><Text style={styles.stepNumber}>4</Text></View>
+                <Text style={styles.stepText}>Add any additional text and tap Save</Text>
+              </View>
+            </View>
+          </View>
+
           <View style={styles.integrationsList}>
             {integrations.map((integration) => (
               <View key={integration.id} style={styles.integrationCard}>
@@ -299,5 +328,67 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
     marginTop: 12,
+  },
+  appleNotesCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#e1e1e1',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 3.84,
+    elevation: 2,
+  },
+  appleNotesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  appleNotesTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginLeft: 12,
+    color: '#1a1a1a',
+  },
+  appleNotesText: {
+    fontSize: 15,
+    color: '#666',
+    marginBottom: 16,
+    lineHeight: 22,
+  },
+  appleNotesSteps: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 16,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  stepBullet: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgb(159, 122, 234)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  stepNumber: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  stepText: {
+    fontSize: 15,
+    color: '#333',
+    flex: 1,
   },
 });
