@@ -23,6 +23,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: true,
     bundleIdentifier: "com.notecompanion.app",
+    usesIcloudStorage: true,
+    usesAppleSignIn: true,
     config: {
       usesNonExemptEncryption: false,
     },
@@ -60,7 +62,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         },
       ],
     },
-    usesIcloudStorage: true,
     associatedDomains: [],
   },
   android: {
@@ -106,6 +107,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundler: "metro",
   },
   plugins: [
+    'expo-apple-authentication',
     "expo-router",
     "expo-secure-store",
     "expo-file-system",
