@@ -134,7 +134,7 @@ export default function SignInScreen() {
       >
         <View style={styles.header}>
           <Text style={styles.title}>Welcome to Note Companion</Text>
-          <Text style={styles.subtitle}>Sign in to get started</Text>
+          <Text style={styles.subtitle}>Sign in to access your account</Text>
         </View>
 
         <View style={styles.form}>

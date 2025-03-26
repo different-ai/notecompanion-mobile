@@ -107,7 +107,7 @@ export function UsageStatus({ compact = false }: UsageStatusProps) {
             {getPlanDisplay(usageData?.tier || 'free')}
           </ThemedText>
           <ThemedText colorName="textSecondary" type="caption">
-            {usageData?.subscriptionStatus === 'active' ? 'Active Subscription' : 'Free Usage'}
+            {usageData?.subscriptionStatus === 'active' ? 'Active Account' : 'Free Usage'}
           </ThemedText>
         </View>
       </View>
@@ -131,21 +131,11 @@ export function UsageStatus({ compact = false }: UsageStatusProps) {
         </View>
       )}
 
-      {compact && usageData?.tier === 'free' && (
-        <TouchableOpacity 
-          style={styles.upgradeButton}
-          onPress={() => Linking.openURL('https://app.notecompanion.ai/dashboard/pricing')}
-        >
-          <MaterialIcons name="upgrade" size={16} color="#ffffff" style={styles.upgradeIcon} />
-          <ThemedText style={styles.upgradeText}>Upgrade Your Plan</ThemedText>
-        </TouchableOpacity>
-      )}
-
       {!compact && (
         <ThemedText style={styles.subscriptionNote}>
           {usageData?.tier === 'free' 
-            ? 'Upgrade to a paid plan for increased processing limits and premium features.'
-            : 'Manage your subscription at app.notecompanion.ai/dashboard'}
+            ? 'This app requires a Note Companion AI account to access premium features.'
+            : 'Thank you for being a Note Companion AI member.'}
         </ThemedText>
       )}
     </ThemedView>

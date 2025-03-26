@@ -4,7 +4,6 @@ import { useAuth, useUser } from '@clerk/clerk-expo';
 import { Button } from '../../components/Button';
 import { ThemedView } from '../../components/ThemedView';
 import { ThemedText } from '../../components/ThemedText';
-import { SubscriptionCard } from '../../components/SubscriptionCard';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSemanticColor } from '@/hooks/useThemeColor';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -50,33 +49,6 @@ export default function SettingsScreen() {
     }
   };
 
-  // Handle subscribe action
-  const handleSubscribe = (plan?: string) => {
-    // Use the environment variable for the API URL
-    const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-    
-    if (!apiUrl) {
-      console.error("EXPO_PUBLIC_API_URL is not defined in environment");
-      Alert.alert(
-        "Configuration Error",
-        "Subscription URL is missing. Please contact support."
-      );
-      return;
-    }
-    
-    // Construct the URL with optional plan parameter
-    const subscriptionUrl = `${apiUrl}${plan ? `?plan=${plan}` : ''}`;
-    
-    // Open the URL in the device browser
-    Linking.openURL(subscriptionUrl).catch(err => {
-      console.error("Error opening subscription URL:", err);
-      Alert.alert(
-        "Error",
-        "Could not open subscription page. Please try again later."
-      );
-    });
-  };
-
   return (
     <ThemedView style={styles.container}>
       <ThemedView variant="elevated" style={[styles.header, { paddingTop: Math.max(20, insets.top) }]}>
@@ -104,20 +76,18 @@ export default function SettingsScreen() {
           </ThemedView>
         </View>
 
-        {/* Subscription Section */}
+        {/* Account Status Section */}
         <View style={styles.section}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>Subscription</ThemedText>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>Account Status</ThemedText>
           
           <UsageStatus />
-
-          <Button
-            onPress={() => Linking.openURL('https://app.notecompanion.ai/dashboard/pricing')}
-            variant="primary"
-            style={styles.subscriptionButton}
-            leftIcon={<MaterialIcons name="star" size={20} color="#fff" />}
-          >
-            Upgrade Your Plan
-          </Button>
+          
+          <ThemedView variant="elevated" style={styles.infoCard}>
+            <MaterialIcons name="info-outline" size={20} color={primaryColor} style={styles.infoIcon} />
+            <ThemedText colorName="textSecondary" style={styles.infoText}>
+              This is a companion app for Note Companion AI service. Your account status reflects the features available to you.
+            </ThemedText>
+          </ThemedView>
         </View>
         
         {/* Bottom buttons */}
@@ -208,49 +178,21 @@ const styles = StyleSheet.create({
   userDetails: {
     marginLeft: 12,
   },
-  // Subscription styles
-  subscriptionCard: {
+  infoCard: {
     padding: 16,
     borderRadius: 12,
     marginBottom: 16,
-    alignItems: 'center',
-  },
-  planInfo: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    alignSelf: 'flex-start',
-    width: '100%',
+    alignItems: 'flex-start',
   },
-  planDetails: {
-    marginLeft: 12,
+  infoIcon: {
+    marginRight: 8,
+    marginTop: 2,
   },
-  usageInfo: {
-    width: '100%',
-    marginBottom: 16,
-  },
-  usageBar: {
-    height: 6,
-    width: '100%',
-    backgroundColor: 'rgba(0,0,0,0.1)',
-    borderRadius: 3,
-    marginTop: 8,
-    overflow: 'hidden',
-  },
-  usageProgress: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  subscriptionNote: {
+  infoText: {
+    flex: 1,
     fontSize: 14,
-    textAlign: 'center',
-    opacity: 0.8,
-    paddingHorizontal: 16,
-  },
-  subscriptionButton: {
-    marginTop: 16,
-    borderRadius: 12,
-    minHeight: 48,
+    lineHeight: 20,
   },
   signOutButton: {
     marginTop: 10,
