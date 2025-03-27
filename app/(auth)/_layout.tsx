@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Stack, Redirect } from 'expo-router';
 import React from 'react';
 import { useAuth } from '@clerk/clerk-expo';
 import { View, ActivityIndicator } from 'react-native';
@@ -17,6 +17,12 @@ export default function AuthLayout() {
     );
   }
 
+  // If signed in, redirect to the main app, but only when directly accessing auth screens
+  // This allows signed-in users to still view demo content if they choose to
+  if (isSignedIn) {
+    return <Redirect href="/(tabs)" />;
+  }
+
   return (
     <Stack 
       screenOptions={{
@@ -24,8 +30,15 @@ export default function AuthLayout() {
         contentStyle: { backgroundColor: 'white' },
         animation: 'slide_from_right',
       }}
+      initialRouteName="index"
     >
-      <Stack.Screen name="index" />
+      <Stack.Screen 
+        name="index" 
+        options={{
+          // Ensure this screen is shown first
+          animation: 'none'
+        }}
+      />
       <Stack.Screen name="sign-in" />
       <Stack.Screen name="sign-up" />
       <Stack.Screen name="welcome" />

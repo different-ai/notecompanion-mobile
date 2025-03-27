@@ -35,7 +35,7 @@ export default function TabLayout() {
     if (isLoaded && !isSignedIn) {
       // Give auth a moment to restore from storage before redirecting
       const authTimeout = setTimeout(() => {
-        router.replace('/(auth)/sign-in');
+        router.replace('/(auth)'); // Redirect to auth index instead of sign-in directly
       }, 1000); // Wait 1 second before redirecting to allow token restore
       
       return () => clearTimeout(authTimeout);

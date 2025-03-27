@@ -23,7 +23,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: true,
     bundleIdentifier: "com.notecompanion.app",
-    usesIcloudStorage: true,
+    usesIcloudStorage: false,
     usesAppleSignIn: true,
     config: {
       usesNonExemptEncryption: false,
@@ -111,6 +111,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-router",
     "expo-secure-store",
     "expo-file-system",
+    "expo-asset",
     [
       "expo-document-picker",
       {
@@ -144,6 +145,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         },
         ios: {
           useFrameworks: "static",
+          syncPlugins: false
         },
       },
     ],

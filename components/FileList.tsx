@@ -16,22 +16,41 @@ import { fetchFiles, deleteFile, UploadedFile, PaginationData } from '@/utils/ap
 import { useAuth } from '@clerk/clerk-expo';
 
 interface FileListProps {
+  files: UploadedFile[];
+  refreshing?: boolean;
+  onRefresh?: () => void;
+  onFileDeleted?: () => void;
   pageSize?: number;
 }
 
-export function FileList({ pageSize = 10 }: FileListProps) {
+export function FileList({ 
+  files = [], 
+  refreshing = false, 
+  onRefresh, 
+  onFileDeleted, 
+  pageSize = 10 
+}: FileListProps) {
   const [page, setPage] = useState(1);
-  const [files, setFiles] = useState<UploadedFile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<PaginationData | null>(null);
   const { getToken } = useAuth();
 
-  const fetchSavedFiles = async (currentPage: number = page) => {
+  const handleLoadMore = () => {
+    // If pagination is handled by parent, this becomes a no-op
+    if (onRefresh || !pagination) return;
+    
+    if (pagination && page < pagination.totalPages && !loading) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchMoreFiles(nextPage);
+    }
+  };
+
+  const fetchMoreFiles = async (currentPage: number) => {
     try {
       setError(null);
-      if (!refreshing) setLoading(true);
+      setLoading(true);
 
       const token = await getToken();
       if (!token) {
@@ -40,36 +59,16 @@ export function FileList({ pageSize = 10 }: FileListProps) {
 
       const result = await fetchFiles(token, { page: currentPage, limit: pageSize });
       
-      // Update files state based on current page
-      setFiles(currentPage === 1 ? result.files : [...files, ...result.files]);
+      // Only update pagination data, parent component handles files
       setPagination(result.pagination);
 
       // Log success for debugging
       console.log(`Loaded ${result.files.length} notes. Page ${currentPage}/${result.pagination.totalPages}`);
     } catch (err) {
-      setError('Failed to load notes. Please check your connection and try again.');
-      console.error('Error fetching notes:', err);
+      setError('Failed to load more notes. Please try again.');
+      console.error('Error fetching more notes:', err);
     } finally {
       setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSavedFiles();
-  }, []);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    setPage(1);
-    await fetchSavedFiles(1);
-  };
-
-  const handleLoadMore = () => {
-    if (pagination && page < pagination.totalPages && !loading) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchSavedFiles(nextPage);
     }
   };
 
@@ -98,12 +97,9 @@ export function FileList({ pageSize = 10 }: FileListProps) {
                 throw new Error(result.error || 'Failed to delete file');
               }
               
-              // Update the file list
-              setFiles(files.filter(file => file.id !== id));
-              
-              // Refresh if the list becomes empty
-              if (files.length === 1) {
-                onRefresh();
+              // Notify parent component about deletion
+              if (onFileDeleted) {
+                onFileDeleted();
               }
             },
           },
@@ -129,38 +125,20 @@ export function FileList({ pageSize = 10 }: FileListProps) {
     }
   };
 
-  if (loading && !refreshing && files.length === 0) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
-      </View>
-    );
-  }
-
-  if (error && files.length === 0) {
-    return (
-      <View style={styles.centerContainer}>
-        <MaterialIcons name="error-outline" size={48} color="#FF3B30" />
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
-          <Text style={styles.retryButtonText}>Try Again</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  // Render the empty state with more descriptive text
+  // If handled by parent, return simple message if no files
   if (files.length === 0) {
     return (
       <View style={styles.centerContainer}>
         <MaterialIcons name="cloud-off" size={48} color="#8E8E93" />
-        <Text style={styles.emptyText}>No notes synced yet</Text>
+        <Text style={styles.emptyText}>No notes found</Text>
         <Text style={styles.emptySubtext}>
           Notes you save will appear here for easy access
         </Text>
-        <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
-          <Text style={styles.retryButtonText}>Refresh</Text>
-        </TouchableOpacity>
+        {onRefresh && (
+          <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
+            <Text style={styles.retryButtonText}>Refresh</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   }
@@ -178,16 +156,16 @@ export function FileList({ pageSize = 10 }: FileListProps) {
       )}
       contentContainerStyle={styles.listContent}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        <RefreshControl 
+          refreshing={refreshing} 
+          onRefresh={onRefresh} 
+          enabled={!!onRefresh}
+        />
       }
       onEndReached={handleLoadMore}
       onEndReachedThreshold={0.5}
-      ListHeaderComponent={() => (
-        <View style={styles.headerContainer}>
-        </View>
-      )}
       ListFooterComponent={() =>
-        loading && files.length > 0 ? (
+        loading ? (
           <ActivityIndicator
             style={styles.loadingMore}
             size="small"

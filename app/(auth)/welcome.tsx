@@ -14,29 +14,50 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
+// Define valid icon types for TypeScript
+type IconName = React.ComponentProps<typeof MaterialIcons>['name'];
+
 export default function WelcomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   
-  const demoNotes = [
+  const documentExamples = [
     {
-      title: "Meeting Notes",
-      preview: "AI-generated summary of today's product meeting with action items...",
-      date: "Nov 10, 2023",
-      icon: "event-note",
+      title: "Receipt Scan",
+      preview: "OCR-extracted text from business receipts for easy expense tracking...",
+      date: "Mar 15, 2024",
+      icon: "receipt" as IconName,
     },
     {
-      title: "Research Summary",
-      preview: "Analysis of competitor landscape with key findings...",
-      date: "Nov 8, 2023",
-      icon: "search",
+      title: "Book Page",
+      preview: "Scanned page with highlighted text and OCR extraction...",
+      date: "Mar 12, 2024",
+      icon: "menu-book" as IconName,
     },
     {
-      title: "Project Ideas",
-      preview: "Brainstorming session for new product features...",
-      date: "Nov 5, 2023",
-      icon: "lightbulb",
+      title: "Handwritten Note",
+      preview: "Transcribed text from handwritten meeting notes with 98% accuracy...",
+      date: "Mar 8, 2024",
+      icon: "draw" as IconName,
+    },
+  ];
+
+  const integrations = [
+    {
+      name: "Obsidian",
+      description: "Sync transcribed documents directly to your Obsidian vault",
+      icon: "extension" as IconName,
+    },
+    {
+      name: "Apple Notes",
+      description: "Export OCR results to Apple Notes with one tap",
+      icon: "ios-share" as IconName,
+    },
+    {
+      name: "Telegram",
+      description: "Share transcribed content via Telegram",
+      icon: "send" as IconName,
     },
   ];
 
@@ -50,7 +71,7 @@ export default function WelcomeScreen() {
         >
           <MaterialIcons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Feature Preview</Text>
+        <Text style={styles.headerTitle}>How It Works</Text>
         <View style={styles.placeholder} />
       </View>
       
@@ -60,78 +81,106 @@ export default function WelcomeScreen() {
       >
         <View style={styles.heroSection}>
           <Image 
-            source={require('@/assets/images/app-demo.png')} 
+            source={require('@/assets/big-logo.png')} 
             style={styles.heroImage}
             resizeMode="contain"
           />
           <Text style={styles.heroTitle}>
-            Your Personal Note Assistant
+            Document OCR & Sync
           </Text>
           <Text style={styles.heroDescription}>
-            Note Companion AI enhances your notes with powerful AI features, 
-            organization, and insights - all accessible through this companion app.
+            Note Companion automatically extracts text from your documents using OCR technology,
+            making it accessible across all your favorite platforms.
           </Text>
         </View>
         
+        <View style={styles.workflowSection}>
+          <Text style={styles.sectionTitle}>Simple Workflow</Text>
+          
+          <View style={styles.workflowStep}>
+            <View style={styles.workflowIcon}>
+              <MaterialIcons name="upload-file" size={28} color="#fff" />
+              <Text style={styles.stepNumber}>1</Text>
+            </View>
+            <View style={styles.workflowContent}>
+              <Text style={styles.workflowTitle}>Upload Document</Text>
+              <Text style={styles.workflowDescription}>
+                Scan or upload any document, receipt, book page, or handwritten note
+              </Text>
+            </View>
+          </View>
+          
+          <View style={styles.workflowStep}>
+            <View style={styles.workflowIcon}>
+              <MaterialIcons name="document-scanner" size={28} color="#fff" />
+              <Text style={styles.stepNumber}>2</Text>
+            </View>
+            <View style={styles.workflowContent}>
+              <Text style={styles.workflowTitle}>OCR Processing</Text>
+              <Text style={styles.workflowDescription}>
+                Our advanced OCR technology extracts text with high accuracy
+              </Text>
+            </View>
+          </View>
+          
+          <View style={styles.workflowStep}>
+            <View style={styles.workflowIcon}>
+              <MaterialIcons name="sync" size={28} color="#fff" />
+              <Text style={styles.stepNumber}>3</Text>
+            </View>
+            <View style={styles.workflowContent}>
+              <Text style={styles.workflowTitle}>Sync Everywhere</Text>
+              <Text style={styles.workflowDescription}>
+                Access your transcribed text on the web dashboard or export to other apps
+              </Text>
+            </View>
+          </View>
+        </View>
+        
         <View style={styles.demoSection}>
-          <Text style={styles.sectionTitle}>Note Examples</Text>
+          <Text style={styles.sectionTitle}>Document Examples</Text>
           <Text style={styles.sectionSubtitle}>
-            Here's a preview of what your notes could look like:
+            Here's what your transcribed documents look like:
           </Text>
           
-          {demoNotes.map((note, index) => (
+          {documentExamples.map((doc, index) => (
             <View key={index} style={styles.noteCard}>
               <View style={styles.noteIconContainer}>
-                <MaterialIcons name={note.icon} size={24} color="#8a65ed" />
+                <MaterialIcons name={doc.icon} size={24} color="#8a65ed" />
               </View>
               <View style={styles.noteContent}>
-                <Text style={styles.noteTitle}>{note.title}</Text>
-                <Text style={styles.notePreview} numberOfLines={2}>{note.preview}</Text>
-                <Text style={styles.noteDate}>{note.date}</Text>
+                <Text style={styles.noteTitle}>{doc.title}</Text>
+                <Text style={styles.notePreview} numberOfLines={2}>{doc.preview}</Text>
+                <Text style={styles.noteDate}>{doc.date}</Text>
               </View>
             </View>
           ))}
         </View>
         
-        <View style={styles.featuresSection}>
-          <Text style={styles.sectionTitle}>Key Features</Text>
+        <View style={styles.integrationsSection}>
+          <Text style={styles.sectionTitle}>Integrations</Text>
+          <Text style={styles.sectionSubtitle}>
+            Sync your transcribed content with these platforms:
+          </Text>
           
-          <View style={styles.featureCard}>
-            <MaterialIcons name="speed" size={24} color="#8a65ed" />
-            <View style={styles.featureContent}>
-              <Text style={styles.featureTitle}>Real-time Sync</Text>
-              <Text style={styles.featureDescription}>
-                Any changes you make on the web are instantly available on your mobile device.
-              </Text>
+          {integrations.map((integration, index) => (
+            <View key={index} style={styles.featureCard}>
+              <MaterialIcons name={integration.icon} size={24} color="#8a65ed" />
+              <View style={styles.featureContent}>
+                <Text style={styles.featureTitle}>{integration.name}</Text>
+                <Text style={styles.featureDescription}>
+                  {integration.description}
+                </Text>
+              </View>
             </View>
-          </View>
-          
-          <View style={styles.featureCard}>
-            <MaterialIcons name="security" size={24} color="#8a65ed" />
-            <View style={styles.featureContent}>
-              <Text style={styles.featureTitle}>Secure Access</Text>
-              <Text style={styles.featureDescription}>
-                Your notes are protected with enterprise-grade security and encryption.
-              </Text>
-            </View>
-          </View>
-          
-          <View style={styles.featureCard}>
-            <MaterialIcons name="auto-awesome" size={24} color="#8a65ed" />
-            <View style={styles.featureContent}>
-              <Text style={styles.featureTitle}>AI Analysis</Text>
-              <Text style={styles.featureDescription}>
-                Get summaries, action items, and insights from your notes.
-              </Text>
-            </View>
-          </View>
+          ))}
         </View>
         
         <View style={styles.infoSection}>
           <MaterialIcons name="info-outline" size={24} color="#666" />
           <Text style={styles.infoText}>
-            This is a companion app for Note Companion AI. 
-            Sign in with your existing account to access your notes and all features.
+            Note Companion is a document OCR and syncing tool. 
+            Sign in with your existing account to start uploading documents and accessing the OCR features.
           </Text>
         </View>
       </ScrollView>
@@ -139,9 +188,9 @@ export default function WelcomeScreen() {
       <View style={[styles.footer, { paddingBottom: Math.max(20, insets.bottom) }]}>
         <TouchableOpacity 
           style={styles.signInButton}
-          onPress={() => router.push('/sign-in')}
+          onPress={() => router.push('/(auth)/sign-in')}
         >
-          <Text style={styles.signInButtonText}>Sign In to Access Your Notes</Text>
+          <Text style={styles.signInButtonText}>Sign In to Start Scanning</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -200,7 +249,58 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
   },
+  workflowSection: {
+    marginBottom: 30,
+  },
+  workflowStep: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  workflowIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#8a65ed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+    position: 'relative',
+  },
+  stepNumber: {
+    position: 'absolute',
+    bottom: -5,
+    right: -5,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#8a65ed',
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#8a65ed',
+    lineHeight: 18,
+  },
+  workflowContent: {
+    flex: 1,
+  },
+  workflowTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  workflowDescription: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
   demoSection: {
+    marginBottom: 30,
+  },
+  integrationsSection: {
     marginBottom: 30,
   },
   sectionTitle: {
@@ -258,9 +358,6 @@ const styles = StyleSheet.create({
   noteDate: {
     fontSize: 12,
     color: '#888',
-  },
-  featuresSection: {
-    marginBottom: 30,
   },
   featureCard: {
     flexDirection: 'row',

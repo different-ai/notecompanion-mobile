@@ -15,6 +15,9 @@ import { useAuth } from '@clerk/clerk-expo';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
+// Define valid icon types for TypeScript
+type IconName = React.ComponentProps<typeof MaterialIcons>['name'];
+
 export default function IndexScreen() {
   const router = useRouter();
   const { isSignedIn, isLoaded } = useAuth();
@@ -28,19 +31,19 @@ export default function IndexScreen() {
   
   const features = [
     {
-      title: "AI-Powered Notes",
-      description: "Access and manage all of your AI-enhanced notes from any device",
-      icon: "lightbulb",
+      title: "Document OCR",
+      description: "Upload documents and photos to automatically extract text using OCR technology",
+      icon: "document-scanner" as IconName,
     },
     {
-      title: "Smart Organization",
-      description: "Your notes are automatically organized for easy retrieval",
-      icon: "folder",
+      title: "Cross-Platform Sync",
+      description: "Access your transcribed notes on Obsidian, Apple Notes, Telegram and more",
+      icon: "sync" as IconName,
     },
     {
-      title: "Secure Sync",
-      description: "All your notes are securely synchronized across devices",
-      icon: "lock",
+      title: "Web Dashboard",
+      description: "Manage all your transcribed documents on our convenient web interface",
+      icon: "computer" as IconName,
     },
   ];
 
@@ -53,18 +56,22 @@ export default function IndexScreen() {
       >
         <View style={styles.header}>
           <Image 
-            source={require('@/assets/images/app-icon.png')} 
+            source={require('@/assets/big-logo.png')} 
             style={styles.logo}
             resizeMode="contain"
           />
           <Text style={styles.title}>Note Companion</Text>
           <Text style={styles.subtitle}>
-            The mobile companion for Note Companion AI
+            Document OCR and Cross-Platform Sync
           </Text>
         </View>
         
         <View style={styles.demoSection}>
-          <Text style={styles.sectionTitle}>Demo Features</Text>
+          <Text style={styles.sectionHeading}>Scan • Transcribe • Sync</Text>
+          <Text style={styles.sectionDescription}>
+            Upload your documents and photos to instantly transcribe text with OCR. 
+            Access your transcribed content across multiple platforms.
+          </Text>
           
           {features.map((feature, index) => (
             <View key={index} style={styles.featureCard}>
@@ -75,13 +82,21 @@ export default function IndexScreen() {
               </View>
             </View>
           ))}
+          
+          <TouchableOpacity 
+            style={styles.learnMoreButton}
+            onPress={() => router.push('/(auth)/welcome')}
+          >
+            <Text style={styles.learnMoreText}>Learn More</Text>
+            <MaterialIcons name="arrow-forward" size={18} color="#8a65ed" />
+          </TouchableOpacity>
         </View>
         
         <View style={styles.infoSection}>
           <MaterialIcons name="info-outline" size={24} color="#666" style={styles.infoIcon} />
           <Text style={styles.infoText}>
-            Note Companion is a companion app for existing Note Companion AI users. 
-            Sign in to access all your notes and AI features.
+            Note Companion is a companion app for the Note Companion AI web service. 
+            Sign in to upload documents, extract text with OCR, and sync with other platforms.
           </Text>
         </View>
       </ScrollView>
@@ -89,14 +104,14 @@ export default function IndexScreen() {
       <View style={[styles.footer, { paddingBottom: Math.max(20, insets.bottom) }]}>
         <TouchableOpacity 
           style={styles.signInButton}
-          onPress={() => router.push('/sign-in')}
+          onPress={() => router.push('/(auth)/sign-in')}
         >
           <Text style={styles.signInButtonText}>Sign In</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={styles.createAccountButton}
-          onPress={() => router.push('/sign-up')}
+          onPress={() => router.push('/(auth)/sign-up')}
         >
           <Text style={styles.createAccountButtonText}>Create Account</Text>
         </TouchableOpacity>
@@ -139,6 +154,20 @@ const styles = StyleSheet.create({
   },
   demoSection: {
     marginBottom: 30,
+  },
+  sectionHeading: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  sectionDescription: {
+    fontSize: 15,
+    color: '#555',
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: 24,
   },
   sectionTitle: {
     fontSize: 18,
@@ -228,5 +257,18 @@ const styles = StyleSheet.create({
     color: '#333',
     fontSize: 16,
     fontWeight: '600',
+  },
+  learnMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    padding: 10,
+  },
+  learnMoreText: {
+    color: '#8a65ed',
+    fontSize: 16,
+    fontWeight: '600',
+    marginRight: 6,
   },
 }); 
